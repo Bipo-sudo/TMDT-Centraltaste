@@ -1,0 +1,13 @@
+# Ký tự đại diện loại bỏ các thư mục node_modules nặng
+node_modules/
+
+# BẮT BUỘC: Loại bỏ file chứa các khóa bảo mật bí mật
+.env
+.env.local
+
+# BẮT BUỘC: Loại bỏ file chứng chỉ kết nối database của Aiven
+ca.pem
+
+# Các file log phát sinh khi chạy lỗi
+*.log
+npm-debug.log*

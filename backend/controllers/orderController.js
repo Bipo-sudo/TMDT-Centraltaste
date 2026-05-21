@@ -1,0 +1,250 @@
+const { pool } = require('../config/db');
+const { sendInvoiceEmail } = require('../services/emailService');
+
+function generateOrderId() {
+  return `ORD-${Math.floor(100000 + Math.random() * 900000)}`;
+}
+
+function generateTrackingNumber() {
+  return `GHTK-${Math.floor(100000000 + Math.random() * 900000000)}`;
+}
+
+function normalizeItems(items) {
+  if (!Array.isArray(items) || items.length === 0) {
+    throw new Error('items must be a non-empty array');
+  }
+
+  return items.map((item) => {
+    const productId = item.product_id;
+    const quantity = Number(item.quantity);
+
+    if (!productId || !Number.isInteger(quantity) || quantity <= 0) {
+      throw new Error('Each item must contain product_id and a positive integer quantity');
+    }
+
+    return {
+      product_id: productId,
+      quantity,
+    };
+  });
+}
+
+function getMembershipDiscountRate(tier) {
+  switch (tier) {
+    case 'silver':
+      return 0.05;
+    case 'gold':
+      return 0.1;
+    case 'platinum':
+      return 0.15;
+    default:
+      return 0;
+  }
+}
+
+function getMembershipTierBySpent(totalSpent) {
+  if (totalSpent > 10000000) {
+    return 'platinum';
+  }
+
+  if (totalSpent > 5000000) {
+    return 'gold';
+  }
+
+  if (totalSpent > 2000000) {
+    return 'silver';
+  }
+
+  return 'bronze';
+}
+
+async function createOrder(req, res, next) {
+  const connection = await pool.getConnection();
+
+  try {
+    const { items, payment_method, shipping_address } = req.body;
+    const normalizedItems = normalizeItems(items);
+
+    if (!payment_method || !['MoMo', 'Visa', 'COD'].includes(payment_method)) {
+      return res.status(400).json({
+        success: false,
+        message: 'payment_method must be one of MoMo, Visa, COD',
+        error: 'Invalid payment method',
+      });
+    }
+
+    if (!shipping_address || typeof shipping_address !== 'string' || !shipping_address.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'shipping_address is required',
+        error: 'Invalid shipping address',
+      });
+    }
+
+    await connection.beginTransaction();
+
+    const [userRows] = await connection.execute(
+      `
+        SELECT email, total_spent, membership_tier, default_shipping_address, default_payment_method
+        FROM users
+        WHERE email = ?
+        FOR UPDATE
+      `,
+      [req.user.email]
+    );
+
+    if (userRows.length === 0) {
+      throw new Error('Authenticated user not found in database');
+    }
+
+    const user = userRows[0];
+    const orderId = generateOrderId();
+    const orderItems = [];
+    let totalAmountVnd = 0;
+
+    for (const item of normalizedItems) {
+      const [productRows] = await connection.execute(
+        `
+          SELECT id, name_vi, name_en, price_vnd, stock
+          FROM products
+          WHERE id = ?
+          FOR UPDATE
+        `,
+        [item.product_id]
+      );
+
+      if (productRows.length === 0) {
+        throw new Error(`Product not found: ${item.product_id}`);
+      }
+
+      const product = productRows[0];
+
+      if (product.stock < item.quantity) {
+        throw new Error(`Insufficient stock for product ${product.id}`);
+      }
+
+      const lineTotalVnd = Number(product.price_vnd || 0) * item.quantity;
+      totalAmountVnd += lineTotalVnd;
+
+      orderItems.push({
+        product_id: product.id,
+        name: product.name_vi || product.name_en || product.id,
+        quantity: item.quantity,
+        unit_price_vnd: Number(product.price_vnd || 0),
+        line_total_vnd: lineTotalVnd,
+      });
+
+      await connection.execute(
+        `
+          UPDATE products
+          SET stock = stock - ?, sales_count = sales_count + ?
+          WHERE id = ?
+        `,
+        [item.quantity, item.quantity, product.id]
+      );
+    }
+
+    const discountRate = getMembershipDiscountRate(user.membership_tier);
+    const discountAmountVnd = Math.floor(totalAmountVnd * discountRate);
+    const finalAmountVnd = Math.max(totalAmountVnd - discountAmountVnd, 0);
+
+    await connection.execute(
+      `
+        INSERT INTO orders (id, user_email, total_amount_vnd, payment_method, shipping_address, order_status)
+        VALUES (?, ?, ?, ?, ?, 'Completed')
+      `,
+      [orderId, req.user.email, finalAmountVnd, payment_method, shipping_address.trim()]
+    );
+
+    await connection.execute('DELETE FROM cart_items WHERE user_email = ?', [req.user.email]);
+
+    const updatedTotalSpent = Number(user.total_spent || 0) + finalAmountVnd;
+    const updatedTier = getMembershipTierBySpent(updatedTotalSpent);
+
+    await connection.execute(
+      `
+        UPDATE users
+        SET
+          total_spent = ?,
+          membership_tier = ?,
+          default_shipping_address = COALESCE(?, default_shipping_address),
+          default_payment_method = COALESCE(?, default_payment_method)
+        WHERE email = ?
+      `,
+      [
+        updatedTotalSpent,
+        updatedTier,
+        shipping_address.trim() || null,
+        payment_method || null,
+        req.user.email,
+      ]
+    );
+
+    await connection.commit();
+
+    const trackingNumber = generateTrackingNumber();
+    const orderDetails = {
+      order_id: orderId,
+      user_email: req.user.email,
+      payment_method,
+      shipping_address: shipping_address.trim(),
+      subtotal_amount_vnd: totalAmountVnd,
+      discount_rate: discountRate,
+      discount_amount_vnd: discountAmountVnd,
+      total_amount_vnd: finalAmountVnd,
+      items: orderItems,
+    };
+
+    try {
+      await sendInvoiceEmail(req.user.email, orderDetails, trackingNumber);
+    } catch (emailError) {
+      console.error('Invoice email failed to send:', {
+        message: emailError.message,
+        code: emailError.code,
+      });
+    }
+
+    return res.status(201).json({
+      success: true,
+      message: 'Checkout completed successfully',
+      data: {
+        order: orderDetails,
+        tracking_number: trackingNumber,
+        membership_tier: updatedTier,
+      },
+    });
+  } catch (error) {
+    await connection.rollback();
+
+    return next(error);
+  } finally {
+    connection.release();
+  }
+}
+
+async function getMyOrders(req, res, next) {
+  try {
+    const [rows] = await pool.execute(
+      `
+        SELECT id, user_email, total_amount_vnd, payment_method, shipping_address, order_status, created_at
+        FROM orders
+        WHERE user_email = ?
+        ORDER BY created_at DESC
+      `,
+      [req.user.email]
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: 'User orders fetched successfully',
+      data: rows,
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+module.exports = {
+  createOrder,
+  getMyOrders,
+};
