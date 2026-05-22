@@ -3,12 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "set NODE_OPTIONS=--max-old-space-size=4096 && next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "next lint"
   },
   "dependencies": {
+    "@react-oauth/google": "^0.13.5",
     "@uploadthing/react": "^7.3.3",
     "axios": "^1.16.1",
     "framer-motion": "^12.40.0",

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useGoogleLogin } from '@react-oauth/google';
 import api from '../../../lib/api';
 import useStore from '../../../store/useStore';
 
@@ -25,6 +26,43 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  const googleLogin = useGoogleLogin({
+    flow: 'implicit',
+    scope: 'openid email profile',
+    onSuccess: async (tokenResponse) => {
+      try {
+        setIsGoogleSubmitting(true);
+        setErrorMessage('');
+
+        const token = tokenResponse?.access_token;
+
+        if (!token) {
+          throw new Error('Google token is missing');
+        }
+
+        const res = await api.post('/auth/google', { token });
+        const authToken = res.data?.data?.token;
+        const user = res.data?.data?.user;
+
+        if (!authToken || !user) {
+          throw new Error('Invalid Google auth payload');
+        }
+
+        window.localStorage.setItem('token', authToken);
+        login(user);
+        router.push('/');
+      } catch (error) {
+        setErrorMessage(error?.response?.data?.message || 'Đăng nhập Google thất bại.');
+      } finally {
+        setIsGoogleSubmitting(false);
+      }
+    },
+    onError: () => {
+      setIsGoogleSubmitting(false);
+      setErrorMessage('Không thể mở Google login.');
+    },
+  });
 
   async function handleLogin(event) {
     event.preventDefault();
@@ -51,34 +89,10 @@ export default function LoginPage() {
     }
   }
 
-  async function handleGoogleLogin() {
-    try {
-      setIsGoogleSubmitting(true);
-      setErrorMessage('');
-
-      // UI-first flow: replace prompt with real Google OAuth token callback when provider is wired.
-      const googleToken = window.prompt('Dán Google ID token để đăng nhập (UI flow tạm thời):');
-
-      if (!googleToken) {
-        return;
-      }
-
-      const res = await api.post('/auth/google', { token: googleToken });
-      const token = res.data?.data?.token;
-      const user = res.data?.data?.user;
-
-      if (!token || !user) {
-        throw new Error('Invalid Google auth payload');
-      }
-
-      window.localStorage.setItem('token', token);
-      login(user);
-      router.push('/');
-    } catch (error) {
-      setErrorMessage(error?.response?.data?.message || 'Đăng nhập Google thất bại.');
-    } finally {
-      setIsGoogleSubmitting(false);
-    }
+  function handleGoogleLogin() {
+    setIsGoogleSubmitting(true);
+    setErrorMessage('');
+    googleLogin();
   }
 
   return (

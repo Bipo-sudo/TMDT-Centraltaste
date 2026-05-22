@@ -11,22 +11,42 @@ if (!clientId) {
 const oauth2Client = new OAuth2Client(clientId || undefined);
 
 async function verifyGoogleToken(token) {
-  const ticket = await oauth2Client.verifyIdToken({
-    idToken: token,
-    audience: clientId,
-  });
+  try {
+    const ticket = await oauth2Client.verifyIdToken({
+      idToken: token,
+      audience: clientId,
+    });
 
-  const payload = ticket.getPayload();
+    const payload = ticket.getPayload();
 
-  if (!payload) {
-    throw new Error('Invalid Google token payload');
+    if (!payload) {
+      throw new Error('Invalid Google token payload');
+    }
+
+    return {
+      email: payload.email,
+      name: payload.name,
+      picture: payload.picture,
+    };
+  } catch (error) {
+    const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Invalid Google token payload');
+    }
+
+    const payload = await response.json();
+
+    return {
+      email: payload.email,
+      name: payload.name,
+      picture: payload.picture,
+    };
   }
-
-  return {
-    email: payload.email,
-    name: payload.name,
-    picture: payload.picture,
-  };
 }
 
 module.exports = {
