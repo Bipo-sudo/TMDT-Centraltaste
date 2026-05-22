@@ -4,6 +4,7 @@ const { createOrder, getMyOrders } = require('../controllers/orderController');
 
 const router = express.Router();
 
+router.post('/', verifyToken, createOrder);
 router.post('/checkout', verifyToken, createOrder);
 router.get('/me', verifyToken, getMyOrders);
 

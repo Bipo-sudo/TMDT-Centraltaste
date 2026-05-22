@@ -22,6 +22,7 @@ function createToken(user) {
       id: user.id,
       email: user.email,
       role: user.role,
+      is_verified: Boolean(user.is_verified),
     },
     process.env.JWT_SECRET,
     { expiresIn: '7d' }
@@ -54,20 +55,64 @@ async function googleLogin(req, res) {
         [payload.email, payload.name || '', payload.picture || '']
       );
 
-      user = {
+      const [createdRows] = await pool.execute(
+        'SELECT id, email, full_name, avatar_url, role, is_verified, auth_provider FROM users WHERE id = ? LIMIT 1',
+        [result.insertId]
+      );
+
+      user = createdRows[0] || {
         id: result.insertId,
         email: payload.email,
+        full_name: payload.name || '',
+        avatar_url: payload.picture || '',
         role: 'customer',
+        is_verified: true,
+        auth_provider: 'google',
+      };
+
+      user = {
+        id: user.id,
+        email: user.email,
+        full_name: user.full_name || payload.name || '',
+        avatar_url: user.avatar_url || payload.picture || '',
+        role: user.role,
+        is_verified: Boolean(user.is_verified),
+        auth_provider: user.auth_provider || 'google',
       };
 
       await sendWelcomeEmail(payload.email, payload.name || 'bạn');
     } else {
+      await pool.execute(
+        `
+          UPDATE users
+          SET is_verified = 1,
+              auth_provider = 'google',
+              full_name = COALESCE(NULLIF(full_name, ''), ?),
+              avatar_url = COALESCE(NULLIF(avatar_url, ''), ?)
+          WHERE email = ?
+        `,
+        [payload.name || '', payload.picture || '', payload.email]
+      );
+
+      const [refreshedRows] = await pool.execute(
+        'SELECT id, email, full_name, avatar_url, role, is_verified, auth_provider FROM users WHERE email = ? LIMIT 1',
+        [payload.email]
+      );
+
+      user = refreshedRows[0] || user;
+
       user = {
         id: user.id,
         email: user.email,
+        full_name: user.full_name || payload.name || '',
+        avatar_url: user.avatar_url || payload.picture || '',
         role: user.role,
+        is_verified: Boolean(user.is_verified),
+        auth_provider: user.auth_provider || 'google',
       };
     }
+
+    user.is_verified = Boolean(user.is_verified);
 
     const jwtToken = createToken(user);
 
@@ -157,7 +202,7 @@ async function verifyOTP(req, res) {
       return res.status(400).json({ success: false, message: 'OTP is incorrect' });
     }
 
-    const [users] = await pool.execute('SELECT id, email, role FROM users WHERE email = ?', [email]);
+    const [users] = await pool.execute('SELECT id, email, full_name, avatar_url, role, is_verified FROM users WHERE email = ?', [email]);
 
     if (users.length === 0) {
       return res.status(404).json({ success: false, message: 'User not found' });
@@ -168,14 +213,37 @@ async function verifyOTP(req, res) {
     await pool.execute('UPDATE users SET is_verified = TRUE WHERE email = ?', [email]);
     otpCache.delete(email);
 
-    const token = createToken(user);
+    try {
+      await sendWelcomeEmail(user.email, user.full_name || 'bạn');
+    } catch (emailError) {
+      console.error('Welcome email failed to send:', {
+        message: emailError.message,
+        code: emailError.code,
+      });
+    }
+
+    const normalizedUser = {
+      id: user.id,
+      email: user.email,
+      full_name: user.full_name || '',
+      avatar_url: user.avatar_url || '',
+      role: user.role,
+      is_verified: Boolean(user.is_verified),
+    };
+
+    normalizedUser.is_verified = Boolean(normalizedUser.is_verified);
+
+    const token = createToken(normalizedUser);
 
     return res.status(200).json({
       success: true,
       message: 'OTP verified successfully',
       data: {
         token,
-        user,
+        user: {
+          ...normalizedUser,
+          is_verified: Boolean(normalizedUser.is_verified),
+        },
       },
     });
   } catch (error) {
@@ -219,8 +287,14 @@ async function login(req, res) {
     const userPayload = {
       id: user.id,
       email: user.email,
+      full_name: user.full_name || '',
+      avatar_url: user.avatar_url || '',
       role: user.role,
+      is_verified: Boolean(user.is_verified),
+      auth_provider: user.auth_provider,
     };
+
+    userPayload.is_verified = Boolean(userPayload.is_verified);
 
     const token = createToken(userPayload);
 

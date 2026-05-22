@@ -1,5 +1,7 @@
 const { pool } = require('../config/db');
-const { sendInvoiceEmail } = require('../services/emailService');
+const { Resend } = require('resend');
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 function generateOrderId() {
   return `ORD-${Math.floor(100000 + Math.random() * 900000)}`;
@@ -7,6 +9,25 @@ function generateOrderId() {
 
 function generateTrackingNumber() {
   return `GHTK-${Math.floor(100000000 + Math.random() * 900000000)}`;
+}
+
+function buildBillEmailHtml(orderDetails) {
+  return `
+    <div style="font-family:Arial,sans-serif;line-height:1.7;color:#111827;background:#f9fafb;padding:24px">
+      <div style="max-width:640px;margin:0 auto;background:#ffffff;border-radius:16px;padding:28px;border:1px solid #e5e7eb">
+        <h2 style="margin-top:0">Đơn hàng của bạn đã được ghi nhận</h2>
+        <p style="margin-bottom:20px">Cảm ơn bạn đã mua sắm tại CentralTaste. Dưới đây là thông tin đơn hàng:</p>
+
+        <div style="background:#f3f4f6;border-radius:12px;padding:16px">
+          <p style="margin:0 0 8px 0"><strong>Mã đơn:</strong> ${orderDetails.order_id}</p>
+          <p style="margin:0 0 8px 0"><strong>Tổng tiền:</strong> ${Number(orderDetails.total_amount_vnd || 0).toLocaleString('vi-VN')} VND</p>
+          <p style="margin:0"><strong>Phương thức thanh toán:</strong> ${orderDetails.payment_method}</p>
+        </div>
+
+        <p style="margin-top:20px;margin-bottom:0">Chúng tôi sẽ xử lý và cập nhật trạng thái đơn hàng sớm nhất.</p>
+      </div>
+    </div>
+  `;
 }
 
 function normalizeItems(items) {
@@ -62,6 +83,16 @@ async function createOrder(req, res, next) {
   const connection = await pool.getConnection();
 
   try {
+    console.log('TOKEN DECODED PAYLOAD:', req.user);
+
+    if (!req.user || !req.user.is_verified) {
+      return res.status(403).json({
+        success: false,
+        message: 'Account is not verified',
+        error: 'Verified account required for checkout',
+      });
+    }
+
     const { items, payment_method, shipping_address } = req.body;
     const normalizedItems = normalizeItems(items);
 
@@ -196,9 +227,14 @@ async function createOrder(req, res, next) {
     };
 
     try {
-      await sendInvoiceEmail(req.user.email, orderDetails, trackingNumber);
+      await resend.emails.send({
+        from: process.env.EMAIL_FROM,
+        to: req.user.email,
+        subject: `Xác nhận đơn hàng ${orderId}`,
+        html: buildBillEmailHtml(orderDetails),
+      });
     } catch (emailError) {
-      console.error('Invoice email failed to send:', {
+      console.error('Order bill email failed to send:', {
         message: emailError.message,
         code: emailError.code,
       });
@@ -215,6 +251,8 @@ async function createOrder(req, res, next) {
     });
   } catch (error) {
     await connection.rollback();
+
+    console.error('LỖI TẠO ĐƠN HÀNG CHI TIẾT:', error);
 
     return next(error);
   } finally {
