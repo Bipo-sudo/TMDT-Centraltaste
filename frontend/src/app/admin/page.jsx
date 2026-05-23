@@ -112,6 +112,8 @@ export default function AdminIndexPage() {
     };
   }, []);
 
+  const recentOrders = stats.recent_orders;
+
   return (
     <section className="space-y-8">
       <div className="space-y-3">
@@ -138,7 +140,7 @@ export default function AdminIndexPage() {
               <h3 className="mt-2 text-2xl font-medium tracking-[-0.03em] text-neutral-950">5 đơn hàng gần nhất</h3>
             </div>
 
-            {stats.recent_orders.length === 0 ? (
+            {recentOrders.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-neutral-200 bg-neutral-50 px-6 py-10 text-sm text-neutral-500">
                 Chưa có đơn hàng nào.
               </div>
@@ -155,7 +157,7 @@ export default function AdminIndexPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {stats.recent_orders.map((order) => {
+                    {recentOrders.map((order) => {
                       const status = normalizeStatus(order.order_status);
 
                       return (
