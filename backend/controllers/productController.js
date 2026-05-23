@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const { pool } = require('../config/db');
 
 async function getAllProducts(req, res, next) {
@@ -39,6 +40,110 @@ async function getAllProducts(req, res, next) {
       success: true,
       message: 'Products fetched successfully',
       data: rows,
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+async function createProduct(req, res, next) {
+  try {
+    const {
+      name_vi,
+      price_vnd,
+      stock,
+      summary_vi,
+      ingredients_vi,
+      shelf_life_vi,
+      main_image_url,
+    } = req.body;
+
+    if (!name_vi || !String(name_vi).trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Tên sản phẩm là bắt buộc',
+      });
+    }
+
+    const [categoryRows] = await pool.execute(
+      'SELECT slug FROM categories ORDER BY slug ASC LIMIT 1'
+    );
+
+    if (categoryRows.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Không tìm thấy category mặc định để tạo sản phẩm',
+      });
+    }
+
+    const productId = `prd_${crypto.randomUUID().replace(/-/g, '')}`;
+    const defaultCategorySlug = categoryRows[0].slug;
+    const normalizedNameVi = String(name_vi).trim();
+
+    await pool.execute(
+      `
+        INSERT INTO products (
+          id,
+          category_slug,
+          price_vnd,
+          stock,
+          name_vi,
+          name_en,
+          summary_vi,
+          main_image_url,
+          shelf_life_vi,
+          ingredients_vi
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `,
+      [
+        productId,
+        defaultCategorySlug,
+        Number(price_vnd || 0),
+        Number(stock || 0),
+        normalizedNameVi,
+        normalizedNameVi,
+        summary_vi || null,
+        main_image_url || null,
+        shelf_life_vi || null,
+        ingredients_vi || null,
+      ]
+    );
+
+    const [rows] = await pool.execute(
+      `
+        SELECT
+          id,
+          category_slug,
+          price_vnd,
+          stock,
+          name_vi,
+          name_en,
+          summary_vi,
+          main_image_url,
+          shelf_life_vi,
+          ingredients_vi
+        FROM products
+        WHERE id = ?
+        LIMIT 1
+      `,
+      [productId]
+    );
+
+    return res.status(201).json({
+      success: true,
+      message: 'Product created successfully',
+      data: rows[0] || {
+        id: productId,
+        category_slug: defaultCategorySlug,
+        price_vnd: Number(price_vnd || 0),
+        stock: Number(stock || 0),
+        name_vi: normalizedNameVi,
+        name_en: normalizedNameVi,
+        summary_vi: summary_vi || null,
+        main_image_url: main_image_url || null,
+        shelf_life_vi: shelf_life_vi || null,
+        ingredients_vi: ingredients_vi || null,
+      },
     });
   } catch (error) {
     return next(error);
@@ -195,6 +300,7 @@ async function getProductById(req, res, next) {
 }
 
 module.exports = {
+  createProduct,
   getAllProducts,
   getTrendingProducts,
   incrementViewCount,

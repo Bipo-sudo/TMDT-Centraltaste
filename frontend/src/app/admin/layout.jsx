@@ -3,7 +3,7 @@
 import { useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { BarChart3, LayoutDashboard, LogOut, Package, ShoppingCart } from 'lucide-react';
+import { BarChart3, ExternalLink, LayoutDashboard, LogOut, Package, ShoppingCart } from 'lucide-react';
 import BrandLogo from '../../components/common/BrandLogo';
 import useStore from '../../store/useStore';
 
@@ -76,6 +76,13 @@ export default function AdminLayout({ children }) {
           </div>
 
           <div className="flex items-center gap-4">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 rounded-full border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition hover:border-neutral-400 hover:text-neutral-950"
+            >
+              <ExternalLink className="h-4 w-4" />
+              Vào cửa hàng
+            </Link>
             <div className="text-right">
               <p className="text-sm font-medium text-neutral-900">{adminName}</p>
               <p className="text-xs text-neutral-500">Administrator</p>

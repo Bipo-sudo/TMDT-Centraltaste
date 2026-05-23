@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { ArrowRight, BadgeCheck, Clock3, Leaf } from 'lucide-react';
 import BrandLogo from '../../components/common/BrandLogo';
 import api from '../../lib/api';
+import useStore from '../../store/useStore';
 
 const brandPillars = [
   {
@@ -60,6 +61,8 @@ function ProductCard({ product }) {
 }
 
 export default function HomePage() {
+  const user = useStore((state) => state.user);
+  const isAuthenticated = useStore((state) => state.isAuthenticated);
   const [trendingProducts, setTrendingProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -107,12 +110,14 @@ export default function HomePage() {
               >
                 Khám phá sản phẩm
               </Link>
-              <Link
-                href="/admin/dashboard"
-                className="inline-flex h-12 items-center justify-center rounded-full border border-neutral-200 bg-white px-6 text-sm font-medium text-neutral-950 transition hover:border-neutral-300 hover:bg-neutral-50"
-              >
-                Vào admin
-              </Link>
+              {isAuthenticated && user?.role === 'admin' ? (
+                <Link
+                  href="/admin/dashboard"
+                  className="inline-flex h-12 items-center justify-center rounded-full border border-neutral-200 bg-white px-6 text-sm font-medium text-neutral-950 transition hover:border-neutral-300 hover:bg-neutral-50"
+                >
+                  Vào admin
+                </Link>
+              ) : null}
             </div>
           </div>
 
