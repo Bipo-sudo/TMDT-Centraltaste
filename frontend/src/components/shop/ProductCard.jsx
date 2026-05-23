@@ -1,41 +1,62 @@
+import { useState } from 'react';
 import Link from 'next/link';
-import { Plus } from 'lucide-react';
+import { Package, Plus } from 'lucide-react';
 
 function formatVnd(value) {
   return Number(value || 0).toLocaleString('vi-VN');
 }
 
 export default function ProductCard({ product }) {
+  const [imageFailed, setImageFailed] = useState(false);
+
   return (
-    <article className="group">
-      <Link href={`/products/${product.id}`} className="block overflow-hidden rounded-[28px] bg-white transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_20px_50px_rgba(15,23,42,0.08)]">
-        <div className="aspect-[4/5] overflow-hidden bg-neutral-100">
-          <img
-            src={product.main_image_url}
-            alt={product.name_vi}
-            className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
-          />
+    <article className="group overflow-hidden rounded-[24px] border border-[rgba(201,168,76,0.14)] bg-[rgba(255,255,255,0.03)] backdrop-blur-sm transition duration-300 hover:-translate-y-1 hover:border-[rgba(201,168,76,0.45)] hover:shadow-[0_24px_60px_rgba(0,0,0,0.2)]">
+      <Link href={`/products/${product.id}`} className="block">
+        <div className="relative aspect-[4/5] overflow-hidden bg-[#1c1710]">
+          {product.main_image_url && !imageFailed ? (
+            <img
+              src={product.main_image_url}
+              alt={product.name_vi}
+              loading="lazy"
+              className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
+              onError={() => setImageFailed(true)}
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center text-[rgba(201,168,76,0.35)]">
+              <Package className="h-10 w-10" />
+            </div>
+          )}
+
+          <span className="absolute left-3 top-3 rounded-full border border-[rgba(201,168,76,0.32)] bg-[rgba(201,168,76,0.1)] px-2.5 py-1 text-[9px] uppercase tracking-[0.18em] text-[#c9a84c]">
+            {product.category_name_vi || product.category_slug || 'Đặc sản'}
+          </span>
+
+          <div className="absolute inset-x-0 bottom-0 bg-[linear-gradient(180deg,transparent,rgba(12,11,9,0.88))] p-4">
+            <p className="text-[9px] uppercase tracking-[0.2em] text-[rgba(240,235,224,0.45)]">Miền Trung</p>
+            <h3 className="mt-1 text-[16px] font-normal leading-snug text-[#f0ebe0]" style={{ fontFamily: 'var(--font-display)' }}>
+              {product.name_vi}
+            </h3>
+          </div>
         </div>
       </Link>
 
-      <div className="px-1 pt-4">
-        <Link href={`/products/${product.id}`} className="block">
-          <h3 className="text-[15px] font-medium tracking-[-0.02em] text-neutral-800 transition group-hover:text-neutral-950">
-            {product.name_vi}
-          </h3>
-        </Link>
+      <div className="space-y-4 p-4">
+        <p className="text-[12px] leading-6 text-[rgba(240,235,224,0.54)]">
+          {product.summary_vi || 'Sản phẩm được trình bày đồng bộ với phong cách cinematic của CentralTaste.'}
+        </p>
 
-        <p className="mt-1 text-sm text-neutral-500">{formatVnd(product.price_vnd)} VND</p>
+        <div className="flex items-center justify-between border-t border-[rgba(201,168,76,0.12)] pt-3">
+          <p className="text-[15px] font-semibold text-[#f0ebe0]">
+            {formatVnd(product.price_vnd)} <span className="text-[11px] font-normal text-[rgba(240,235,224,0.42)]">₫</span>
+          </p>
 
-        <button
-          type="button"
-          className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-neutral-700 transition hover:text-neutral-950"
-        >
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-neutral-100 text-neutral-900 transition group-hover:bg-neutral-200">
+          <button
+            type="button"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[rgba(201,168,76,0.24)] bg-[rgba(201,168,76,0.08)] text-[#f0ebe0] transition hover:border-[rgba(201,168,76,0.55)] hover:text-[#c9a84c]"
+          >
             <Plus className="h-4 w-4" />
-          </span>
-          Thêm vào giỏ
-        </button>
+          </button>
+        </div>
       </div>
     </article>
   );
