@@ -5,11 +5,9 @@ import ShopOAuthProvider from '../../components/shop/ShopOAuthProvider';
 export default function ShopLayout({ children }) {
   return (
     <ShopOAuthProvider>
-      <div className="min-h-screen bg-[#fbfaf7] text-neutral-900">
-        <Header />
-        <main>{children}</main>
-        <Footer />
-      </div>
+      <Header />
+      <main>{children}</main>
+      <Footer />
     </ShopOAuthProvider>
   );
 }
