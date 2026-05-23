@@ -76,17 +76,17 @@ export default function RegisterPage() {
   }
 
   return (
-    <section className="flex min-h-[calc(100vh-6.5rem)] items-start justify-center bg-[#0c0b09] px-4 py-12 sm:px-6 lg:px-8">
+    <section className="relative min-h-screen bg-[#0c0b09] flex items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
       <div className="w-full max-w-md">
-        <div className="mb-6">
+        <div className="mb-4 text-center">
           <p className="text-[10px] uppercase tracking-[0.28em] text-[rgba(201,168,76,0.64)]">Auth</p>
-          <h1 className="mt-2 text-3xl font-light text-[#f0ebe0]" style={{ fontFamily: 'var(--font-display)' }}>
+          <h1 className="mt-2 text-2xl font-semibold text-[#f0ebe0]" style={{ fontFamily: 'var(--font-display)' }}>
             Đăng ký
           </h1>
           <p className="mt-1 text-sm text-[rgba(240,235,224,0.6)]">{step === 1 ? 'Tạo tài khoản để bắt đầu mua sắm.' : 'Nhập OTP 6 số đã gửi về email của bạn.'}</p>
         </div>
 
-        <div className="rounded-[14px] border border-[rgba(201,168,76,0.06)] bg-[rgba(255,255,255,0.02)] p-6 shadow-[0_18px_50px_rgba(0,0,0,0.4)]">
+        <div className="rounded-[28px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] backdrop-blur-md p-6 shadow-[0_18px_50px_rgba(0,0,0,0.4)]">
           {step === 1 ? (
             <form onSubmit={handleRegister} className="space-y-4">
               <label className="block">
@@ -97,7 +97,7 @@ export default function RegisterPage() {
                   value={registerForm.full_name}
                   onChange={(event) => setRegisterForm((prev) => ({ ...prev, full_name: event.target.value }))}
                   placeholder="Họ và tên"
-                  className="w-full rounded-md bg-[rgba(255,255,255,0.02)] px-3 py-2 text-sm text-[#f0ebe0] outline-none placeholder:text-[rgba(240,235,224,0.36)]"
+                  className="w-full rounded-[12px] border border-[rgba(240,235,224,0.06)] bg-[rgba(255,255,255,0.01)] px-3 py-2 text-sm text-[#f0ebe0] outline-none placeholder:text-[rgba(240,235,224,0.36)]"
                 />
               </label>
 
@@ -109,7 +109,7 @@ export default function RegisterPage() {
                   value={registerForm.email}
                   onChange={(event) => setRegisterForm((prev) => ({ ...prev, email: event.target.value }))}
                   placeholder="Email"
-                  className="w-full rounded-md bg-[rgba(255,255,255,0.02)] px-3 py-2 text-sm text-[#f0ebe0] outline-none placeholder:text-[rgba(240,235,224,0.36)]"
+                  className="w-full rounded-[12px] border border-[rgba(240,235,224,0.06)] bg-[rgba(255,255,255,0.01)] px-3 py-2 text-sm text-[#f0ebe0] outline-none placeholder:text-[rgba(240,235,224,0.36)]"
                 />
               </label>
 
@@ -122,7 +122,7 @@ export default function RegisterPage() {
                   value={registerForm.password}
                   onChange={(event) => setRegisterForm((prev) => ({ ...prev, password: event.target.value }))}
                   placeholder="Mật khẩu"
-                  className="w-full rounded-md bg-[rgba(255,255,255,0.02)] px-3 py-2 text-sm text-[#f0ebe0] outline-none placeholder:text-[rgba(240,235,224,0.36)]"
+                  className="w-full rounded-[12px] border border-[rgba(240,235,224,0.06)] bg-[rgba(255,255,255,0.01)] px-3 py-2 text-sm text-[#f0ebe0] outline-none placeholder:text-[rgba(240,235,224,0.36)]"
                 />
               </label>
 
@@ -132,7 +132,7 @@ export default function RegisterPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="inline-flex h-11 w-full items-center justify-center rounded-full bg-[#c9a84c] px-4 text-sm font-medium text-[#1a1208] transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex h-11 w-full items-center justify-center rounded-[12px] bg-[#c9a84c] px-4 text-sm font-medium text-[#1a1208] transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isSubmitting ? 'Đang gửi OTP...' : 'Xác nhận'}
               </button>
@@ -148,7 +148,7 @@ export default function RegisterPage() {
                   value={normalizedOtp}
                   onChange={(event) => setOtp(event.target.value)}
                   placeholder="Nhập 6 số OTP"
-                  className="w-full rounded-md bg-[rgba(255,255,255,0.02)] px-3 py-2 text-sm tracking-[0.28em] text-[#f0ebe0] outline-none placeholder:tracking-normal placeholder:text-[rgba(240,235,224,0.36)]"
+                  className="w-full rounded-[12px] border border-[rgba(240,235,224,0.06)] bg-[rgba(255,255,255,0.01)] px-3 py-2 text-sm tracking-[0.28em] text-[#f0ebe0] outline-none placeholder:tracking-normal placeholder:text-[rgba(240,235,224,0.36)]"
                 />
               </label>
 
@@ -162,14 +162,14 @@ export default function RegisterPage() {
                     setStep(1);
                     setErrorMessage('');
                   }}
-                  className="inline-flex h-11 w-full items-center justify-center rounded-full border border-[rgba(201,168,76,0.08)] bg-transparent px-4 text-sm font-medium text-[rgba(240,235,224,0.9)] transition hover:bg-[rgba(201,168,76,0.02)]"
+                  className="inline-flex h-11 w-full items-center justify-center rounded-[12px] border border-[rgba(201,168,76,0.08)] bg-transparent px-4 text-sm font-medium text-[rgba(240,235,224,0.9)] transition hover:bg-[rgba(201,168,76,0.02)]"
                 >
                   Quay lại
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="inline-flex h-11 w-full items-center justify-center rounded-full bg-[#c9a84c] px-4 text-sm font-medium text-[#1a1208] transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="inline-flex h-11 w-full items-center justify-center rounded-[12px] bg-[#c9a84c] px-4 text-sm font-medium text-[#1a1208] transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {isSubmitting ? 'Đang xác thực...' : 'Xác nhận OTP'}
                 </button>

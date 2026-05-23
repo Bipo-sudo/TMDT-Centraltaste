@@ -4,8 +4,10 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useGoogleLogin } from '@react-oauth/google';
+import { ArrowRight, ChevronRight, Crown, ShieldCheck, Sparkles, Store } from 'lucide-react';
 import api from '../../../lib/api';
 import useStore from '../../../store/useStore';
+import BrandLogo from '../../../components/common/BrandLogo';
 
 function GoogleIcon() {
   return (
@@ -96,74 +98,96 @@ export default function LoginPage() {
   }
 
   return (
-    <section className="flex min-h-[calc(100vh-6.5rem)] items-start justify-center bg-[#0c0b09] px-4 py-12 sm:px-6 lg:px-8">
+    <section className="relative min-h-screen bg-[#0c0b09] flex items-center justify-center px-4 py-12">
+      {/* background accents */}
+      <div className="pointer-events-none absolute inset-0 -z-10">
+        <div className="absolute left-1/2 top-8 -translate-x-1/2 h-96 w-[140%] -translate-y-6 rounded-[28%] bg-gradient-to-r from-[#111010] via-[#1b1a18] to-[#0c0b09] opacity-95" />
+        <div className="absolute left-[-8%] top-[-6%] h-80 w-80 rounded-full bg-[#c9a84c]/[0.08] blur-3xl" />
+        <div className="absolute right-[-6%] top-[18%] h-96 w-96 rounded-full bg-sky-500/[0.04] blur-3xl" />
+      </div>
+
       <div className="w-full max-w-md">
-        <div className="mb-6">
-          <p className="text-[10px] uppercase tracking-[0.28em] text-[rgba(201,168,76,0.64)]">Auth</p>
-          <h1 className="mt-2 text-3xl font-light text-[#f0ebe0]" style={{ fontFamily: 'var(--font-display)' }}>
-            Đăng nhập
-          </h1>
-          <p className="mt-1 text-sm text-[rgba(240,235,224,0.6)]">Tiếp tục hành trình mua sắm tinh gọn và thanh lịch.</p>
+        <div className="mx-auto mb-6 flex items-center justify-center">
+          <BrandLogo variant="light" width={42} height={42} />
         </div>
 
-        <div className="rounded-[14px] border border-[rgba(201,168,76,0.06)] bg-[rgba(255,255,255,0.02)] p-6 shadow-[0_18px_50px_rgba(0,0,0,0.4)]">
-          <form onSubmit={handleLogin} className="space-y-4">
+        <div className="rounded-[28px] border border-[rgba(255,255,255,0.06)] bg-[rgba(255,255,255,0.02)] backdrop-blur-md p-6 shadow-[0_10px_40px_rgba(0,0,0,0.6)]">
+          <h2 className="text-center text-2xl font-semibold text-[#f0ebe0]">Welcome back</h2>
+          <p className="mt-2 text-center text-sm text-[rgba(240,235,224,0.56)]">Login with your Apple or Google account</p>
+
+          <div className="mt-6 space-y-3">
+            <button
+              type="button"
+              onClick={handleGoogleLogin}
+              disabled={isGoogleSubmitting}
+              className="flex w-full items-center justify-center gap-3 rounded-[12px] border border-[rgba(240,235,224,0.08)] bg-[rgba(255,255,255,0.02)] px-4 py-2 text-sm text-[rgba(240,235,224,0.9)] hover:bg-[rgba(255,255,255,0.03)] disabled:opacity-70"
+            >
+              <span className="inline-flex h-5 w-5 items-center justify-center"><GoogleIcon /></span>
+              <span>{isGoogleSubmitting ? 'Đang xử lý...' : 'Login with Google'}</span>
+            </button>
+
+            <button
+              type="button"
+              disabled
+              className="flex w-full items-center justify-center gap-3 rounded-[12px] border border-[rgba(240,235,224,0.08)] bg-[rgba(255,255,255,0.02)] px-4 py-2 text-sm text-[rgba(240,235,224,0.7)] opacity-80"
+            >
+              <span className="text-base leading-none"></span>
+              <span>Login with Apple</span>
+            </button>
+          </div>
+
+          <div className="mt-6 flex items-center gap-3">
+            <span className="h-px flex-1 bg-[rgba(240,235,224,0.06)]" />
+            <span className="text-sm text-[rgba(240,235,224,0.46)]">Or continue with</span>
+            <span className="h-px flex-1 bg-[rgba(240,235,224,0.06)]" />
+          </div>
+
+          <form onSubmit={handleLogin} className="mt-6 space-y-4">
             <label className="block">
-              <span className="sr-only">Email</span>
+              <span className="text-xs font-medium text-[rgba(240,235,224,0.56)]">Email</span>
               <input
                 type="email"
                 required
                 value={form.email}
                 onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))}
-                placeholder="Email"
-                className="w-full rounded-md bg-[rgba(255,255,255,0.02)] px-3 py-2 text-sm text-[#f0ebe0] outline-none placeholder:text-[rgba(240,235,224,0.36)]"
+                placeholder="m@example.com"
+                className="mt-1 w-full rounded-[12px] border border-[rgba(240,235,224,0.06)] bg-[rgba(255,255,255,0.01)] px-3 py-2 text-sm text-[#f0ebe0] outline-none placeholder:text-[rgba(240,235,224,0.28)]"
               />
             </label>
 
             <label className="block">
-              <span className="sr-only">Password</span>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-[rgba(240,235,224,0.56)]">Password</span>
+                <Link href="/forgot" className="text-sm text-[rgba(240,235,224,0.46)] hover:underline">Forgot your password?</Link>
+              </div>
               <input
                 type="password"
                 required
                 value={form.password}
                 onChange={(event) => setForm((prev) => ({ ...prev, password: event.target.value }))}
-                placeholder="Mật khẩu"
-                className="w-full rounded-md bg-[rgba(255,255,255,0.02)] px-3 py-2 text-sm text-[#f0ebe0] outline-none placeholder:text-[rgba(240,235,224,0.36)]"
+                placeholder="••••••••"
+                className="mt-1 w-full rounded-[12px] border border-[rgba(240,235,224,0.06)] bg-[rgba(255,255,255,0.01)] px-3 py-2 text-sm text-[#f0ebe0] outline-none placeholder:text-[rgba(240,235,224,0.28)]"
               />
             </label>
 
             {errorMessage ? <p className="text-sm text-rose-400">{errorMessage}</p> : null}
 
-            <div className="space-y-3">
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="inline-flex h-11 w-full items-center justify-center rounded-full bg-[#c9a84c] px-4 text-sm font-medium text-[#1a1208] transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isSubmitting ? 'Đang đăng nhập...' : 'Đăng nhập'}
-              </button>
-
-              <button
-                type="button"
-                onClick={handleGoogleLogin}
-                disabled={isGoogleSubmitting}
-                className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-full border border-[rgba(201,168,76,0.08)] bg-transparent px-4 text-sm font-medium text-[rgba(240,235,224,0.9)] transition hover:bg-[rgba(201,168,76,0.02)] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <span className="inline-flex h-4 w-4 items-center justify-center">
-                  <GoogleIcon />
-                </span>
-                <span className="text-sm">{isGoogleSubmitting ? 'Đang xử lý...' : 'Đăng nhập bằng Google'}</span>
-              </button>
-            </div>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="mt-1 w-full rounded-[12px] bg-[#f3f3f3] px-4 py-2 text-sm font-semibold text-[#0b0a09] hover:opacity-95 disabled:opacity-60"
+            >
+              {isSubmitting ? 'Đang đăng nhập...' : 'Login'}
+            </button>
           </form>
 
-          <p className="mt-4 text-center text-sm text-[rgba(240,235,224,0.56)]">
-            Chưa có tài khoản?{' '}
-            <Link href="/register" className="font-medium text-[#c9a84c] underline-offset-4 transition hover:underline">
-              Đăng ký
-            </Link>
+          <p className="mt-4 text-center text-sm text-[rgba(240,235,224,0.5)]">
+            Don't have an account?{' '}
+            <Link href="/register" className="font-medium text-[#c9a84c] underline-offset-4 hover:underline">Sign up</Link>
           </p>
         </div>
+
+        <p className="mt-6 text-center text-xs text-[rgba(240,235,224,0.36)]">By clicking continue, you agree to our Terms of Service and Privacy Policy.</p>
       </div>
     </section>
   );

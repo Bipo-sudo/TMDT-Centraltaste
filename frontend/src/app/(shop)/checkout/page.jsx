@@ -205,7 +205,7 @@ export default function CheckoutPage() {
 
     return (
       <section className="mx-auto flex min-h-[60vh] w-full max-w-7xl items-center justify-center px-4 py-16 sm:px-6 lg:px-8">
-        <p className="text-sm text-neutral-500">Đang tải thông tin thanh toán...</p>
+        <p className="text-sm text-[rgba(240,235,224,0.6)]">Đang tải thông tin thanh toán...</p>
       </section>
     );
   }
@@ -217,7 +217,7 @@ export default function CheckoutPage() {
   if (errorMessage) {
     return (
       <section className="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="rounded-[24px] border border-dashed border-neutral-200 bg-white p-8 text-sm text-neutral-500">
+        <div className="rounded-[24px] border border-dashed border-[rgba(201,168,76,0.14)] bg-[rgba(255,255,255,0.02)] p-8 text-sm text-[rgba(240,235,224,0.6)]">
           {errorMessage}
         </div>
       </section>
@@ -228,17 +228,17 @@ export default function CheckoutPage() {
     <>
       <section className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
         <div className="mb-10 max-w-2xl space-y-3">
-          <p className="text-[11px] uppercase tracking-[0.4em] text-neutral-400">Checkout</p>
-          <h1 className="text-4xl font-light tracking-[-0.05em] text-neutral-950">Thanh toán</h1>
+          <p className="text-[11px] uppercase tracking-[0.4em] text-[rgba(201,168,76,0.64)]">Checkout</p>
+          <h1 className="text-4xl font-light tracking-[-0.05em] text-[#f0ebe0]">Thanh toán</h1>
         </div>
 
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)] lg:items-start">
           <form onSubmit={handleSubmit} className="space-y-8">
-            <div className="rounded-[28px] bg-white p-6 shadow-[0_18px_50px_rgba(15,23,42,0.04)] sm:p-8">
-              <p className="text-xs uppercase tracking-[0.35em] text-neutral-400">Thông tin giao hàng</p>
+            <div className="rounded-[28px] bg-[rgba(255,255,255,0.02)] p-6 shadow-[0_18px_50px_rgba(0,0,0,0.26)] sm:p-8">
+              <p className="text-xs uppercase tracking-[0.35em] text-[rgba(201,168,76,0.64)]">Thông tin giao hàng</p>
 
               <div className="mt-6 grid gap-6">
-                <label className="block border-b border-neutral-200 pb-3">
+                <label className="block border-b border-[rgba(201,168,76,0.08)] pb-3">
                   <span className="sr-only">Họ tên</span>
                   <input
                     type="text"
@@ -246,11 +246,11 @@ export default function CheckoutPage() {
                     value={form.full_name}
                     onChange={(event) => setForm((prev) => ({ ...prev, full_name: event.target.value }))}
                     placeholder="Họ và tên"
-                    className="w-full bg-transparent text-sm text-neutral-900 outline-none placeholder:text-neutral-400"
+                    className="w-full bg-transparent text-sm text-[#f0ebe0] outline-none placeholder:text-[rgba(240,235,224,0.38)]"
                   />
                 </label>
 
-                <label className="block border-b border-neutral-200 pb-3">
+                <label className="block border-b border-[rgba(201,168,76,0.08)] pb-3">
                   <span className="sr-only">Số điện thoại</span>
                   <input
                     type="tel"
@@ -258,11 +258,11 @@ export default function CheckoutPage() {
                     value={form.phone}
                     onChange={(event) => setForm((prev) => ({ ...prev, phone: event.target.value }))}
                     placeholder="Số điện thoại"
-                    className="w-full bg-transparent text-sm text-neutral-900 outline-none placeholder:text-neutral-400"
+                    className="w-full bg-transparent text-sm text-[#f0ebe0] outline-none placeholder:text-[rgba(240,235,224,0.38)]"
                   />
                 </label>
 
-                <label className="block border-b border-neutral-200 pb-3">
+                <label className="block border-b border-[rgba(201,168,76,0.08)] pb-3">
                   <span className="sr-only">Địa chỉ chi tiết</span>
                   <input
                     type="text"
@@ -270,25 +270,25 @@ export default function CheckoutPage() {
                     value={form.address}
                     onChange={(event) => setForm((prev) => ({ ...prev, address: event.target.value }))}
                     placeholder="Địa chỉ chi tiết"
-                    className="w-full bg-transparent text-sm text-neutral-900 outline-none placeholder:text-neutral-400"
+                    className="w-full bg-transparent text-sm text-[#f0ebe0] outline-none placeholder:text-[rgba(240,235,224,0.38)]"
                   />
                 </label>
 
-                <label className="block border-b border-neutral-200 pb-3">
+                <label className="block border-b border-[rgba(201,168,76,0.08)] pb-3">
                   <span className="sr-only">Ghi chú</span>
                   <textarea
                     rows={3}
                     value={form.note}
                     onChange={(event) => setForm((prev) => ({ ...prev, note: event.target.value }))}
                     placeholder="Ghi chú"
-                    className="w-full resize-none bg-transparent text-sm text-neutral-900 outline-none placeholder:text-neutral-400"
+                    className="w-full resize-none bg-transparent text-sm text-[#f0ebe0] outline-none placeholder:text-[rgba(240,235,224,0.38)]"
                   />
                 </label>
               </div>
             </div>
 
-            <div className="rounded-[28px] bg-white p-6 shadow-[0_18px_50px_rgba(15,23,42,0.04)] sm:p-8">
-              <p className="text-xs uppercase tracking-[0.35em] text-neutral-400">Phương thức thanh toán</p>
+            <div className="rounded-[28px] bg-[rgba(255,255,255,0.02)] p-6 shadow-[0_18px_50px_rgba(0,0,0,0.26)] sm:p-8">
+              <p className="text-xs uppercase tracking-[0.35em] text-[rgba(201,168,76,0.64)]">Phương thức thanh toán</p>
 
               <div className="mt-6 space-y-3">
                 {[
@@ -303,16 +303,16 @@ export default function CheckoutPage() {
                       key={method.value}
                       className={`flex cursor-pointer items-center gap-4 rounded-[20px] border px-4 py-4 transition ${
                         isActive
-                          ? 'border-neutral-300 bg-neutral-50'
-                          : 'border-neutral-200 bg-white hover:bg-neutral-50'
+                          ? 'border-[rgba(201,168,76,0.22)] bg-[rgba(201,168,76,0.06)]'
+                          : 'border-[rgba(201,168,76,0.08)] bg-[rgba(255,255,255,0.02)] hover:bg-[rgba(255,255,255,0.04)]'
                       }`}
                     >
                       <span
                         className={`flex h-5 w-5 items-center justify-center rounded-full border ${
-                          isActive ? 'border-neutral-950' : 'border-neutral-300'
+                          isActive ? 'border-[#c9a84c]' : 'border-[rgba(240,235,224,0.24)]'
                         }`}
                       >
-                        <span className={`h-2.5 w-2.5 rounded-full ${isActive ? 'bg-neutral-950' : 'bg-transparent'}`} />
+                        <span className={`h-2.5 w-2.5 rounded-full ${isActive ? 'bg-[#c9a84c]' : 'bg-transparent'}`} />
                       </span>
                       <input
                         type="radio"
@@ -322,15 +322,15 @@ export default function CheckoutPage() {
                         onChange={(event) => setForm((prev) => ({ ...prev, paymentMethod: event.target.value }))}
                         className="sr-only"
                       />
-                      <span className="text-sm text-neutral-800">{method.label}</span>
+                      <span className="text-sm text-[#f0ebe0]">{method.label}</span>
                     </label>
                   );
                 })}
               </div>
 
               {form.paymentMethod === 'VISA' ? (
-                <div className="mt-6 grid gap-5 rounded-[24px] bg-[#fbfaf7] p-5">
-                  <label className="block border-b border-neutral-200 pb-3">
+                <div className="mt-6 grid gap-5 rounded-[24px] bg-[rgba(255,255,255,0.03)] p-5">
+                  <label className="block border-b border-[rgba(201,168,76,0.08)] pb-3">
                     <span className="sr-only">Số thẻ</span>
                     <input
                       type="text"
@@ -339,11 +339,11 @@ export default function CheckoutPage() {
                       value={form.cardNumber}
                       onChange={(event) => setForm((prev) => ({ ...prev, cardNumber: event.target.value }))}
                       placeholder="Số thẻ"
-                      className="w-full bg-transparent text-sm text-neutral-900 outline-none placeholder:text-neutral-400"
+                      className="w-full bg-transparent text-sm text-[#f0ebe0] outline-none placeholder:text-[rgba(240,235,224,0.38)]"
                     />
                   </label>
 
-                  <label className="block border-b border-neutral-200 pb-3">
+                  <label className="block border-b border-[rgba(201,168,76,0.08)] pb-3">
                     <span className="sr-only">Tên in trên thẻ</span>
                     <input
                       type="text"
@@ -351,12 +351,12 @@ export default function CheckoutPage() {
                       value={form.cardName}
                       onChange={(event) => setForm((prev) => ({ ...prev, cardName: event.target.value }))}
                       placeholder="Tên in trên thẻ"
-                      className="w-full bg-transparent text-sm text-neutral-900 outline-none placeholder:text-neutral-400"
+                      className="w-full bg-transparent text-sm text-[#f0ebe0] outline-none placeholder:text-[rgba(240,235,224,0.38)]"
                     />
                   </label>
 
                   <div className="grid gap-5 sm:grid-cols-2">
-                    <label className="block border-b border-neutral-200 pb-3">
+                    <label className="block border-b border-[rgba(201,168,76,0.08)] pb-3">
                       <span className="sr-only">Ngày hết hạn</span>
                       <input
                         type="text"
@@ -364,11 +364,11 @@ export default function CheckoutPage() {
                         value={form.cardExpiry}
                         onChange={(event) => setForm((prev) => ({ ...prev, cardExpiry: event.target.value }))}
                         placeholder="MM/YY"
-                        className="w-full bg-transparent text-sm text-neutral-900 outline-none placeholder:text-neutral-400"
+                        className="w-full bg-transparent text-sm text-[#f0ebe0] outline-none placeholder:text-[rgba(240,235,224,0.38)]"
                       />
                     </label>
 
-                    <label className="block border-b border-neutral-200 pb-3">
+                    <label className="block border-b border-[rgba(201,168,76,0.08)] pb-3">
                       <span className="sr-only">CVV</span>
                       <input
                         type="password"
@@ -376,7 +376,7 @@ export default function CheckoutPage() {
                         value={form.cardCvv}
                         onChange={(event) => setForm((prev) => ({ ...prev, cardCvv: event.target.value }))}
                         placeholder="CVV"
-                        className="w-full bg-transparent text-sm text-neutral-900 outline-none placeholder:text-neutral-400"
+                        className="w-full bg-transparent text-sm text-[#f0ebe0] outline-none placeholder:text-[rgba(240,235,224,0.38)]"
                       />
                     </label>
                   </div>
@@ -384,22 +384,22 @@ export default function CheckoutPage() {
               ) : null}
 
               {form.paymentMethod === 'MOMO' ? (
-                <div className="mt-6 grid gap-5 rounded-[24px] bg-[#fbfaf7] p-5 sm:grid-cols-[180px_minmax(0,1fr)] sm:items-center">
-                  <div className="overflow-hidden rounded-[20px] bg-white p-3 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+                <div className="mt-6 grid gap-5 rounded-[24px] bg-[rgba(255,255,255,0.03)] p-5 sm:grid-cols-[180px_minmax(0,1fr)] sm:items-center">
+                  <div className="overflow-hidden rounded-[20px] bg-[rgba(255,255,255,0.02)] p-3 shadow-[0_10px_30px_rgba(0,0,0,0.22)]">
                     <img
-                      src="https://via.placeholder.com/320x320/f3f4f6/111111?text=QR+CODE"
+                      src="https://via.placeholder.com/320x320/1a1810/f0ebe0?text=QR+CODE"
                       alt="QR Code MoMo giả lập"
                       className="h-full w-full object-cover"
                     />
                   </div>
 
-                  <div className="space-y-3 text-sm text-neutral-600">
-                    <p className="text-xs uppercase tracking-[0.35em] text-neutral-400">Hướng dẫn chuyển khoản</p>
+                  <div className="space-y-3 text-sm text-[rgba(240,235,224,0.64)]">
+                    <p className="text-xs uppercase tracking-[0.35em] text-[rgba(201,168,76,0.64)]">Hướng dẫn chuyển khoản</p>
                     <p>
                       Mở ứng dụng MoMo và quét mã QR giả lập bên trái để xác nhận thanh toán.
                     </p>
                     <p>
-                      Nội dung: <span className="font-medium text-neutral-900">{momoReference}</span>
+                      Nội dung: <span className="font-medium text-[#f0ebe0]">{momoReference}</span>
                     </p>
                   </div>
                 </div>
@@ -408,53 +408,53 @@ export default function CheckoutPage() {
               <button
                 type="submit"
                 disabled={isSubmitting || isProcessingPayment}
-                className="mt-8 inline-flex h-12 w-full items-center justify-center rounded-full bg-neutral-950 px-6 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
+                className="mt-8 inline-flex h-12 w-full items-center justify-center rounded-full bg-[#c9a84c] px-6 text-sm font-medium text-[#1a1208] transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {isProcessingPayment ? 'Đang xử lý thanh toán...' : isSubmitting ? 'Đang đặt hàng...' : 'Đặt hàng'}
               </button>
             </div>
           </form>
 
-          <aside className="rounded-[28px] bg-[#fbfaf7] p-6 shadow-[0_18px_50px_rgba(15,23,42,0.04)] lg:sticky lg:top-28">
-            <p className="text-xs uppercase tracking-[0.35em] text-neutral-400">Order Summary</p>
+          <aside className="rounded-[28px] bg-[rgba(255,255,255,0.02)] p-6 shadow-[0_18px_50px_rgba(0,0,0,0.26)] lg:sticky lg:top-28">
+            <p className="text-xs uppercase tracking-[0.35em] text-[rgba(201,168,76,0.64)]">Order Summary</p>
 
             <div className="mt-6 space-y-4">
               {cartItems.map((item) => (
                 <div key={item.id} className="flex items-center gap-4">
-                  <div className="h-14 w-14 shrink-0 overflow-hidden rounded-2xl bg-neutral-100">
+                  <div className="h-14 w-14 shrink-0 overflow-hidden rounded-2xl bg-neutral-800">
                     <img src={item.main_image_url} alt={item.name_vi} className="h-full w-full object-cover" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-neutral-900">{item.name_vi}</p>
-                    <p className="mt-1 text-xs text-neutral-500">SL: {item.quantity}</p>
+                    <p className="truncate text-sm font-medium text-[#f0ebe0]">{item.name_vi}</p>
+                    <p className="mt-1 text-xs text-[rgba(240,235,224,0.54)]">SL: {item.quantity}</p>
                   </div>
-                  <p className="text-sm font-medium text-neutral-800">{formatVnd(item.line_total_vnd)} VND</p>
+                  <p className="text-sm font-medium text-[#f0ebe0]">{formatVnd(item.line_total_vnd)} VND</p>
                 </div>
               ))}
             </div>
 
-            <div className="mt-8 space-y-4 text-sm text-neutral-600">
+            <div className="mt-8 space-y-4 text-sm text-[rgba(240,235,224,0.64)]">
               <div className="flex items-center justify-between gap-4">
                 <span>Tổng tiền hàng</span>
-                <span className="font-medium text-neutral-900">{formatVnd(totalAmountVnd)} VND</span>
+                <span className="font-medium text-[#f0ebe0]">{formatVnd(totalAmountVnd)} VND</span>
               </div>
               <div className="flex items-center justify-between gap-4">
                 <span>Phí vận chuyển</span>
-                <span className="font-medium text-neutral-900">Miễn phí</span>
+                <span className="font-medium text-[#f0ebe0]">Miễn phí</span>
               </div>
-              <div className="h-px bg-neutral-200" />
+              <div className="h-px bg-[rgba(201,168,76,0.08)]" />
               <div className="flex items-center justify-between gap-4 text-base">
-                <span className="font-medium text-neutral-900">Tổng cộng</span>
-                <span className="font-semibold text-neutral-950">{formatVnd(totalAmountVnd)} VND</span>
+                <span className="font-medium text-[#f0ebe0]">Tổng cộng</span>
+                <span className="font-semibold text-[#f0ebe0]">{formatVnd(totalAmountVnd)} VND</span>
               </div>
-              <div className="text-xs text-neutral-500">{totalCount} sản phẩm trong đơn hàng</div>
+              <div className="text-xs text-[rgba(240,235,224,0.54)]">{totalCount} sản phẩm trong đơn hàng</div>
             </div>
           </aside>
         </div>
       </section>
 
       <div className={`fixed bottom-5 right-5 z-[80] transition ${toastMessage ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-2 opacity-0'}`}>
-        <div className="rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-800 shadow-[0_18px_45px_rgba(15,23,42,0.14)]">
+        <div className="rounded-2xl border border-[rgba(201,168,76,0.12)] bg-[rgba(19,17,8,0.98)] px-4 py-3 text-sm text-[#f0ebe0] shadow-[0_18px_45px_rgba(0,0,0,0.3)]">
           {toastMessage}
         </div>
       </div>
