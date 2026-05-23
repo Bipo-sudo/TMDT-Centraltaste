@@ -95,6 +95,14 @@ export default function ProductsPage() {
     });
   }, [products, searchQuery, selectedCategory]);
 
+  const PAGE_SIZE = 12;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const visibleProducts = useMemo(() => filteredProducts.slice(0, visibleCount), [filteredProducts, visibleCount]);
+
+  function handleLoadMore() {
+    setVisibleCount((c) => c + PAGE_SIZE);
+  }
+
   return (
     <div className="bg-[#0c0b09] text-[#f0ebe0]">
       <section className="relative overflow-hidden border-b border-[rgba(201,168,76,0.14)]">
@@ -112,8 +120,8 @@ export default function ProductsPage() {
         />
 
         <div className="relative mx-auto max-w-[1280px] px-4 sm:px-6 lg:px-8">
-          <div className="grid items-center gap-10 py-12 lg:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.8fr)] lg:py-16">
-            <motion.div
+          <div className="grid items-center gap-10 py-12 lg:grid-cols-1 lg:py-16">
+              <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
@@ -133,122 +141,135 @@ export default function ProductsPage() {
               </p>
 
               <div className="mt-8 flex flex-wrap gap-3">
-                <Link href="/#story" className="inline-flex items-center gap-2 rounded-full bg-[#c9a84c] px-6 py-3 text-[13px] font-semibold text-[#1a1208] transition hover:gap-3 hover:opacity-90">
+                <Link href="/#story" className="inline-flex items-center gap-2 rounded-full bg-[#c9a84c] px-6 py-3 text-[13px] font-semibold text-[#1a1208] transition hover:opacity-90">
                   Xem câu chuyện <ArrowRight className="h-4 w-4" />
                 </Link>
-                <Link href="/" className="inline-flex items-center gap-2 rounded-full border border-[rgba(240,235,224,0.22)] px-6 py-3 text-[13px] font-medium text-[rgba(240,235,224,0.78)] transition hover:border-[rgba(201,168,76,0.55)] hover:text-[#c9a84c]">
+                <Link href="/" className="inline-flex items-center gap-2 px-4 py-2 text-[13px] font-medium text-[rgba(240,235,224,0.78)] transition hover:text-[#c9a84c]">
                   Về trang chủ
                 </Link>
               </div>
             </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, x: 36 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
-              className="relative mx-auto w-full max-w-[440px]"
-            >
-              <div className="relative overflow-hidden rounded-[32px] border border-[rgba(201,168,76,0.16)] bg-[linear-gradient(135deg,#1f1911,#312718)] p-6 shadow-[0_30px_80px_rgba(0,0,0,0.24)]">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(201,168,76,0.18),transparent_60%)]" />
-                <div className="relative space-y-5">
-                  <div className="flex items-center gap-3">
-                    <div className="grid h-12 w-12 place-items-center rounded-full bg-[linear-gradient(135deg,#c9a84c,#e8d49a)] text-[#2a1f08]">
-                      <Wheat className="h-6 w-6" />
-                    </div>
-                    <div>
-                      <p className="text-[10px] uppercase tracking-[0.26em] text-[rgba(240,235,224,0.4)]">CentralTaste</p>
-                      <p className="text-[11px] uppercase tracking-[0.2em] text-[rgba(240,235,224,0.42)]">Premium Vietnamese Specialties</p>
-                    </div>
-                  </div>
-
-                  <div className="rounded-[24px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.04)] p-4 backdrop-blur-sm">
-                    <div className="flex items-center gap-3 text-[rgba(240,235,224,0.74)]">
-                      <Sparkles className="h-4 w-4 text-[#c9a84c]" />
-                      <p className="text-[10px] uppercase tracking-[0.26em]">Lọc theo vùng, hương vị và mô tả</p>
-                    </div>
-                    <p className="mt-3 text-[13px] leading-7 text-[rgba(240,235,224,0.56)]">
-                      Những sản phẩm bên dưới được giữ trong một lưới tối, thoáng và thống nhất với homepage để người dùng thấy cùng một hệ thiết kế.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
+            {/* promotional/info card removed to keep storefront clean */}
           </div>
         </div>
       </section>
 
       <section className="mx-auto max-w-[1280px] px-4 pb-16 pt-10 sm:px-6 lg:px-8 lg:pb-20 lg:pt-14">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-2xl">
-            <p className="text-[10px] uppercase tracking-[0.28em] text-[rgba(201,168,76,0.72)]">Bộ lọc</p>
-            <h2 className="mt-3 text-[1.7rem] leading-[1.12] tracking-[-0.03em] text-[#f0ebe0] sm:text-[2rem]" style={{ fontFamily: 'var(--font-display)', fontWeight: 400 }}>
-              Tìm nhanh sản phẩm bạn đang <em className="italic text-[#c9a84c]">quan tâm</em>.
-            </h2>
-          </div>
-
-          <label className="flex w-full max-w-xl items-center gap-3 rounded-full border border-[rgba(201,168,76,0.18)] bg-[rgba(255,255,255,0.03)] px-4 py-3">
-            <Search className="h-4 w-4 shrink-0 text-[rgba(240,235,224,0.5)]" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Tìm sản phẩm, hương vị, hoặc mô tả..."
-              className="w-full bg-transparent text-sm text-[#f0ebe0] outline-none placeholder:text-[rgba(240,235,224,0.32)]"
-            />
-          </label>
-        </div>
-
-        <div className="mt-5 flex flex-wrap gap-2">
-          {[{ slug: 'all', label: 'Tất cả' }, ...availableCategories].map((category) => {
-            const isActive = selectedCategory === category.slug;
-
-            return (
-              <button
-                key={category.slug}
-                type="button"
-                onClick={() => setSelectedCategory(category.slug)}
-                className={`rounded-full px-4 py-2 text-[12px] transition ${
-                  isActive
-                    ? 'border border-[rgba(201,168,76,0.45)] bg-[rgba(201,168,76,0.14)] text-[#c9a84c]'
-                    : 'border border-[rgba(240,235,224,0.12)] bg-[rgba(255,255,255,0.02)] text-[rgba(240,235,224,0.62)] hover:border-[rgba(201,168,76,0.3)] hover:text-[#c9a84c]'
-                }`}
-              >
-                {category.label}
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="mt-10">
-          {isLoading ? (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {[1, 2, 3, 4].map((key) => (
-                <div key={key} className="overflow-hidden rounded-[24px] border border-[rgba(201,168,76,0.14)] bg-[rgba(255,255,255,0.03)]">
-                  <div className="h-[260px] animate-pulse bg-[rgba(201,168,76,0.08)]" />
-                  <div className="space-y-3 p-4">
-                    <div className="h-2.5 w-20 animate-pulse rounded bg-[rgba(201,168,76,0.12)]" />
-                    <div className="h-5 w-4/5 animate-pulse rounded bg-[rgba(201,168,76,0.12)]" />
-                    <div className="h-3 w-full animate-pulse rounded bg-[rgba(201,168,76,0.08)]" />
-                    <div className="h-9 w-full animate-pulse rounded-full bg-[rgba(201,168,76,0.08)]" />
-                  </div>
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[280px_1fr]">
+          <aside className="hidden lg:block">
+            <div className="sticky top-24 space-y-6">
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.28em] text-[rgba(201,168,76,0.72)]">Danh mục</p>
+                <div className="mt-4 space-y-2">
+                  {[{ slug: 'all', label: 'Tất cả' }, ...availableCategories].map((category) => (
+                    <div key={category.slug} className="flex items-center gap-3">
+                      <input
+                        id={`cat-${category.slug}`}
+                        name="category"
+                        type="radio"
+                        checked={selectedCategory === category.slug}
+                        onChange={() => setSelectedCategory(category.slug)}
+                        className="h-4 w-4 accent-[#c9a84c]"
+                      />
+                      <label htmlFor={`cat-${category.slug}`} className="text-sm text-[rgba(240,235,224,0.78)]">
+                        {category.label}
+                      </label>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
+
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.28em] text-[rgba(201,168,76,0.72)]">Tìm kiếm</p>
+                <label className="mt-2 flex w-full items-center gap-3 rounded px-3 py-2 bg-[rgba(255,255,255,0.02)]">
+                  <Search className="h-4 w-4 shrink-0 text-[rgba(240,235,224,0.5)]" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(event) => setSearchQuery(event.target.value)}
+                    placeholder="Tìm sản phẩm, hương vị, hoặc mô tả..."
+                    className="w-full bg-transparent text-sm text-[#f0ebe0] outline-none placeholder:text-[rgba(240,235,224,0.32)]"
+                  />
+                </label>
+              </div>
             </div>
-          ) : errorMessage ? (
-            <div className="rounded-[24px] border border-dashed border-[rgba(201,168,76,0.2)] bg-[rgba(255,255,255,0.03)] p-8 text-sm text-[rgba(240,235,224,0.6)]">
-              {errorMessage}
+          </aside>
+
+          <main>
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.28em] text-[rgba(201,168,76,0.72)]">Bộ lọc</p>
+                <h2 className="mt-3 text-[1.45rem] leading-[1.12] tracking-[-0.03em] text-[#f0ebe0] sm:text-[1.65rem]" style={{ fontFamily: 'var(--font-display)', fontWeight: 400 }}>
+                  Tìm nhanh sản phẩm bạn đang <em className="italic text-[#c9a84c]">quan tâm</em>.
+                </h2>
+              </div>
+
+              <div className="mt-4 lg:mt-0">
+                <div className="flex flex-wrap gap-2">
+                  {[{ slug: 'all', label: 'Tất cả' }, ...availableCategories].map((category) => {
+                    const isActive = selectedCategory === category.slug;
+
+                    return (
+                      <button
+                        key={category.slug}
+                        type="button"
+                        onClick={() => setSelectedCategory(category.slug)}
+                        className={`rounded-full px-3 py-1.5 text-[12px] transition ${
+                          isActive
+                            ? 'bg-[rgba(201,168,76,0.14)] text-[#c9a84c]'
+                            : 'text-[rgba(240,235,224,0.62)] hover:text-[#c9a84c]'
+                        }`}
+                      >
+                        {category.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
-          ) : filteredProducts.length === 0 ? (
-            <div className="rounded-[24px] border border-dashed border-[rgba(201,168,76,0.2)] bg-[rgba(255,255,255,0.03)] p-8 text-sm text-[rgba(240,235,224,0.6)]">
-              Không tìm thấy sản phẩm phù hợp với bộ lọc hiện tại.
+
+            <div className="mt-6">
+              {isLoading ? (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {[1, 2, 3, 4].map((key) => (
+                    <div key={key} className="overflow-hidden rounded-[12px] bg-[rgba(255,255,255,0.02)]">
+                      <div className="h-44 animate-pulse bg-[rgba(201,168,76,0.08)]" />
+                      <div className="space-y-3 p-4">
+                        <div className="h-2.5 w-20 animate-pulse rounded bg-[rgba(201,168,76,0.12)]" />
+                        <div className="h-5 w-4/5 animate-pulse rounded bg-[rgba(201,168,76,0.12)]" />
+                        <div className="h-3 w-full animate-pulse rounded bg-[rgba(201,168,76,0.08)]" />
+                        <div className="h-9 w-full animate-pulse rounded-full bg-[rgba(201,168,76,0.08)]" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : errorMessage ? (
+                <div className="rounded-[12px] bg-[rgba(255,255,255,0.03)] p-8 text-sm text-[rgba(240,235,224,0.6)]">
+                  {errorMessage}
+                </div>
+              ) : filteredProducts.length === 0 ? (
+                <div className="rounded-[12px] bg-[rgba(255,255,255,0.03)] p-8 text-sm text-[rgba(240,235,224,0.6)]">
+                  Không tìm thấy sản phẩm phù hợp với bộ lọc hiện tại.
+                </div>
+              ) : (
+                <>
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    {visibleProducts.map((product) => (
+                      <ProductCard key={product.id} product={product} />
+                    ))}
+                  </div>
+
+                  {filteredProducts.length > visibleCount && (
+                    <div className="mt-6 flex justify-center">
+                      <button onClick={handleLoadMore} className="rounded-full bg-[#c9a84c] px-6 py-2 font-semibold text-[#1a1208]">
+                        Xem thêm
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {filteredProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
-          )}
+          </main>
         </div>
       </section>
     </div>

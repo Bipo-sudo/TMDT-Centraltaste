@@ -76,110 +76,114 @@ export default function RegisterPage() {
   }
 
   return (
-    <section className="flex min-h-[calc(100vh-7rem)] items-center justify-center bg-[#fafaf8] px-4 py-12 sm:px-6 lg:px-8">
-      <div className="w-full max-w-md rounded-[28px] bg-white/92 p-8 shadow-[0_24px_70px_rgba(15,23,42,0.08)] sm:p-10">
-        <p className="text-[11px] uppercase tracking-[0.4em] text-neutral-400">Auth</p>
-        <h1 className="mt-4 text-4xl font-light tracking-[-0.05em] text-neutral-950">Đăng ký</h1>
-        <p className="mt-2 text-sm leading-7 text-neutral-500">
-          {step === 1 ? 'Tạo tài khoản để bắt đầu mua sắm.' : 'Nhập OTP 6 số đã gửi về email của bạn.'}
-        </p>
+    <section className="flex min-h-[calc(100vh-6.5rem)] items-start justify-center bg-[#0c0b09] px-4 py-12 sm:px-6 lg:px-8">
+      <div className="w-full max-w-md">
+        <div className="mb-6">
+          <p className="text-[10px] uppercase tracking-[0.28em] text-[rgba(201,168,76,0.64)]">Auth</p>
+          <h1 className="mt-2 text-3xl font-light text-[#f0ebe0]" style={{ fontFamily: 'var(--font-display)' }}>
+            Đăng ký
+          </h1>
+          <p className="mt-1 text-sm text-[rgba(240,235,224,0.6)]">{step === 1 ? 'Tạo tài khoản để bắt đầu mua sắm.' : 'Nhập OTP 6 số đã gửi về email của bạn.'}</p>
+        </div>
 
-        {step === 1 ? (
-          <form onSubmit={handleRegister} className="mt-8 space-y-6">
-            <label className="block border-b border-neutral-200 pb-3">
-              <span className="sr-only">Họ tên</span>
-              <input
-                type="text"
-                required
-                value={registerForm.full_name}
-                onChange={(event) => setRegisterForm((prev) => ({ ...prev, full_name: event.target.value }))}
-                placeholder="Họ và tên"
-                className="w-full bg-transparent text-sm text-neutral-900 outline-none placeholder:text-neutral-400"
-              />
-            </label>
+        <div className="rounded-[14px] border border-[rgba(201,168,76,0.06)] bg-[rgba(255,255,255,0.02)] p-6 shadow-[0_18px_50px_rgba(0,0,0,0.4)]">
+          {step === 1 ? (
+            <form onSubmit={handleRegister} className="space-y-4">
+              <label className="block">
+                <span className="sr-only">Họ tên</span>
+                <input
+                  type="text"
+                  required
+                  value={registerForm.full_name}
+                  onChange={(event) => setRegisterForm((prev) => ({ ...prev, full_name: event.target.value }))}
+                  placeholder="Họ và tên"
+                  className="w-full rounded-md bg-[rgba(255,255,255,0.02)] px-3 py-2 text-sm text-[#f0ebe0] outline-none placeholder:text-[rgba(240,235,224,0.36)]"
+                />
+              </label>
 
-            <label className="block border-b border-neutral-200 pb-3">
-              <span className="sr-only">Email</span>
-              <input
-                type="email"
-                required
-                value={registerForm.email}
-                onChange={(event) => setRegisterForm((prev) => ({ ...prev, email: event.target.value }))}
-                placeholder="Email"
-                className="w-full bg-transparent text-sm text-neutral-900 outline-none placeholder:text-neutral-400"
-              />
-            </label>
+              <label className="block">
+                <span className="sr-only">Email</span>
+                <input
+                  type="email"
+                  required
+                  value={registerForm.email}
+                  onChange={(event) => setRegisterForm((prev) => ({ ...prev, email: event.target.value }))}
+                  placeholder="Email"
+                  className="w-full rounded-md bg-[rgba(255,255,255,0.02)] px-3 py-2 text-sm text-[#f0ebe0] outline-none placeholder:text-[rgba(240,235,224,0.36)]"
+                />
+              </label>
 
-            <label className="block border-b border-neutral-200 pb-3">
-              <span className="sr-only">Password</span>
-              <input
-                type="password"
-                required
-                minLength={6}
-                value={registerForm.password}
-                onChange={(event) => setRegisterForm((prev) => ({ ...prev, password: event.target.value }))}
-                placeholder="Mật khẩu"
-                className="w-full bg-transparent text-sm text-neutral-900 outline-none placeholder:text-neutral-400"
-              />
-            </label>
+              <label className="block">
+                <span className="sr-only">Password</span>
+                <input
+                  type="password"
+                  required
+                  minLength={6}
+                  value={registerForm.password}
+                  onChange={(event) => setRegisterForm((prev) => ({ ...prev, password: event.target.value }))}
+                  placeholder="Mật khẩu"
+                  className="w-full rounded-md bg-[rgba(255,255,255,0.02)] px-3 py-2 text-sm text-[#f0ebe0] outline-none placeholder:text-[rgba(240,235,224,0.36)]"
+                />
+              </label>
 
-            {errorMessage ? <p className="text-sm text-red-600">{errorMessage}</p> : null}
-            {successMessage ? <p className="text-sm text-emerald-700">{successMessage}</p> : null}
+              {errorMessage ? <p className="text-sm text-rose-400">{errorMessage}</p> : null}
+              {successMessage ? <p className="text-sm text-emerald-400">{successMessage}</p> : null}
 
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="inline-flex h-12 w-full items-center justify-center rounded-full bg-neutral-950 px-5 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isSubmitting ? 'Đang gửi OTP...' : 'Xác nhận'}
-            </button>
-          </form>
-        ) : (
-          <form onSubmit={handleVerifyOtp} className="mt-8 space-y-6">
-            <label className="block border-b border-neutral-200 pb-3">
-              <span className="sr-only">OTP</span>
-              <input
-                type="text"
-                inputMode="numeric"
-                required
-                value={normalizedOtp}
-                onChange={(event) => setOtp(event.target.value)}
-                placeholder="Nhập 6 số OTP"
-                className="w-full bg-transparent text-sm tracking-[0.28em] text-neutral-900 outline-none placeholder:tracking-normal placeholder:text-neutral-400"
-              />
-            </label>
-
-            {errorMessage ? <p className="text-sm text-red-600">{errorMessage}</p> : null}
-            {successMessage ? <p className="text-sm text-emerald-700">{successMessage}</p> : null}
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setStep(1);
-                  setErrorMessage('');
-                }}
-                className="inline-flex h-12 w-full items-center justify-center rounded-full border border-neutral-300 bg-white px-5 text-sm font-medium text-neutral-800 transition hover:bg-neutral-50"
-              >
-                Quay lại
-              </button>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="inline-flex h-12 w-full items-center justify-center rounded-full bg-neutral-950 px-5 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex h-11 w-full items-center justify-center rounded-full bg-[#c9a84c] px-4 text-sm font-medium text-[#1a1208] transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {isSubmitting ? 'Đang xác thực...' : 'Xác nhận OTP'}
+                {isSubmitting ? 'Đang gửi OTP...' : 'Xác nhận'}
               </button>
-            </div>
-          </form>
-        )}
+            </form>
+          ) : (
+            <form onSubmit={handleVerifyOtp} className="space-y-4">
+              <label className="block">
+                <span className="sr-only">OTP</span>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  required
+                  value={normalizedOtp}
+                  onChange={(event) => setOtp(event.target.value)}
+                  placeholder="Nhập 6 số OTP"
+                  className="w-full rounded-md bg-[rgba(255,255,255,0.02)] px-3 py-2 text-sm tracking-[0.28em] text-[#f0ebe0] outline-none placeholder:tracking-normal placeholder:text-[rgba(240,235,224,0.36)]"
+                />
+              </label>
 
-        <p className="mt-8 text-center text-sm text-neutral-500">
-          Đã có tài khoản?{' '}
-          <Link href="/login" className="font-medium text-neutral-900 underline-offset-4 transition hover:underline">
-            Đăng nhập
-          </Link>
-        </p>
+              {errorMessage ? <p className="text-sm text-rose-400">{errorMessage}</p> : null}
+              {successMessage ? <p className="text-sm text-emerald-400">{successMessage}</p> : null}
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStep(1);
+                    setErrorMessage('');
+                  }}
+                  className="inline-flex h-11 w-full items-center justify-center rounded-full border border-[rgba(201,168,76,0.08)] bg-transparent px-4 text-sm font-medium text-[rgba(240,235,224,0.9)] transition hover:bg-[rgba(201,168,76,0.02)]"
+                >
+                  Quay lại
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="inline-flex h-11 w-full items-center justify-center rounded-full bg-[#c9a84c] px-4 text-sm font-medium text-[#1a1208] transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isSubmitting ? 'Đang xác thực...' : 'Xác nhận OTP'}
+                </button>
+              </div>
+            </form>
+          )}
+
+          <p className="mt-4 text-center text-sm text-[rgba(240,235,224,0.56)]">
+            Đã có tài khoản?{' '}
+            <Link href="/login" className="font-medium text-[#c9a84c] underline-offset-4 transition hover:underline">
+              Đăng nhập
+            </Link>
+          </p>
+        </div>
       </div>
     </section>
   );

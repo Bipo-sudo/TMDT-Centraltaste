@@ -11,15 +11,8 @@ function formatVnd(value) {
 }
 
 function formatDate(value) {
-  if (!value) {
-    return 'Đang cập nhật';
-  }
-
-  return new Date(value).toLocaleDateString('vi-VN', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
+  if (!value) return 'Đang cập nhật';
+  return new Date(value).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
 function getStatusTone(status) {
@@ -42,25 +35,15 @@ function getStatusTone(status) {
 
 function buildInitials(name, email) {
   const source = String(name || email || '').trim();
-  if (!source) {
-    return 'CT';
-  }
-
+  if (!source) return 'CT';
   const parts = source.split(/\s+/).filter(Boolean);
-  if (parts.length === 1) {
-    return parts[0].slice(0, 2).toUpperCase();
-  }
-
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return `${parts[0][0] || ''}${parts[parts.length - 1][0] || ''}`.toUpperCase();
 }
 
 function VerificationBadge({ isVerified }) {
   return (
-    <span
-      className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
-        isVerified ? 'bg-emerald-100 text-emerald-700' : 'bg-neutral-100 text-neutral-500'
-      }`}
-    >
+    <span className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${isVerified ? 'bg-emerald-100 text-emerald-700' : 'bg-neutral-100 text-neutral-600'}`}>
       {isVerified ? 'Đã xác thực' : 'Chưa xác thực'}
     </span>
   );
@@ -79,61 +62,40 @@ export default function ProfilePage() {
 
   const initials = useMemo(() => buildInitials(user?.full_name, user?.email), [user]);
 
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
+  useEffect(() => setIsMounted(true), []);
 
   useEffect(() => {
-    if (isMounted && !user) {
-      router.replace('/login');
-    }
+    if (isMounted && !user) router.replace('/login');
   }, [isMounted, router, user]);
 
   useEffect(() => {
-    let isMounted = true;
-
+    let mounted = true;
     async function loadOrders() {
-      if (!isMounted || !isAuthenticated || !user) {
-        return;
-      }
-
+      if (!mounted || !isAuthenticated || !user) return;
       try {
         setIsLoading(true);
         setErrorMessage('');
-
         const response = await api.get('/orders/me');
-
-        if (!isMounted) {
-          return;
-        }
-
+        if (!mounted) return;
         setOrders(response.data?.data || []);
-      } catch (error) {
-        if (!isMounted) {
-          return;
-        }
-
-        if (error?.response?.status === 401) {
+      } catch (err) {
+        if (!mounted) return;
+        if (err?.response?.status === 401) {
           router.replace('/login');
           return;
         }
-
         setErrorMessage('Không thể tải lịch sử đơn hàng.');
       } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
+        if (mounted) setIsLoading(false);
       }
     }
-
     loadOrders();
-
     return () => {
-      isMounted = false;
+      mounted = false;
     };
   }, [isAuthenticated, router, user]);
 
-  async function handleLogout() {
+  function handleLogout() {
     window.localStorage.removeItem('token');
     clearUser();
     router.push('/login');
@@ -147,71 +109,51 @@ export default function ProfilePage() {
     );
   }
 
-  if (!isAuthenticated || !user) {
-    return null;
-  }
+  if (!isAuthenticated || !user) return null;
 
   return (
     <section className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
       <div className="grid gap-8 lg:grid-cols-[320px_minmax(0,1fr)] lg:items-start">
-        <aside className="rounded-[28px] bg-white p-6 shadow-[0_18px_50px_rgba(15,23,42,0.04)] lg:sticky lg:top-28">
-          <p className="text-xs uppercase tracking-[0.35em] text-neutral-400">Hồ sơ</p>
+        <aside className="rounded-[14px] bg-[rgba(255,255,255,0.02)] p-6 lg:sticky lg:top-28">
+          <p className="text-xs uppercase tracking-[0.35em] text-[rgba(201,168,76,0.64)]">Hồ sơ</p>
 
           <div className="mt-6 flex items-center gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-neutral-950 text-lg font-medium text-white">
-              {initials}
-            </div>
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#c9a84c] text-lg font-medium text-[#1a1208]">{initials}</div>
             <div className="min-w-0">
-              <h1 className="truncate text-xl font-medium tracking-[-0.03em] text-neutral-950">
-                {user.full_name || 'Người dùng'}
-              </h1>
-              <p className="truncate text-sm text-neutral-500">{user.email}</p>
+              <h1 className="truncate text-xl font-medium tracking-[-0.03em] text-[#f0ebe0]">{user.full_name || 'Người dùng'}</h1>
+              <p className="truncate text-sm text-[rgba(240,235,224,0.64)]">{user.email}</p>
             </div>
           </div>
 
-          <div className="mt-8 space-y-2 text-sm text-neutral-500">
+          <div className="mt-8 space-y-2 text-sm text-[rgba(240,235,224,0.64)]">
             <p>
-              Trạng thái: <span className="font-medium text-neutral-800">{user.role || 'customer'}</span>
+              Trạng thái: <span className="font-medium text-[#f0ebe0]">{user.role || 'customer'}</span>
             </p>
             <div>
-              <span className="text-neutral-500">Tài khoản: </span>
+              <span className="text-[rgba(240,235,224,0.64)]">Tài khoản: </span>
               <VerificationBadge isVerified={user.is_verified} />
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="mt-8 inline-flex items-center text-sm font-medium text-neutral-600 underline-offset-4 transition hover:text-neutral-950 hover:underline"
-          >
-            Đăng xuất
-          </button>
+          <button type="button" onClick={handleLogout} className="mt-8 inline-flex items-center text-sm font-medium text-[rgba(240,235,224,0.7)] underline-offset-4 transition hover:text-[#f0ebe0] hover:underline">Đăng xuất</button>
         </aside>
 
         <div className="space-y-6">
           <div className="max-w-2xl space-y-3">
-            <p className="text-xs uppercase tracking-[0.35em] text-neutral-400">Lịch sử đơn hàng</p>
-            <h2 className="text-4xl font-light tracking-[-0.05em] text-neutral-950">Đơn hàng của bạn</h2>
-            <p className="text-sm leading-7 text-neutral-500">
-              Theo dõi các đơn đã đặt và trạng thái xử lý gần nhất.
-            </p>
+            <p className="text-xs uppercase tracking-[0.35em] text-[rgba(201,168,76,0.64)]">Lịch sử đơn hàng</p>
+            <h2 className="text-3xl font-light tracking-[-0.05em] text-[#f0ebe0]">Đơn hàng của bạn</h2>
+            <p className="text-sm leading-7 text-[rgba(240,235,224,0.64)]">Theo dõi các đơn đã đặt và trạng thái xử lý gần nhất.</p>
           </div>
 
           {isLoading ? (
-            <div className="rounded-[24px] bg-white p-8 text-sm text-neutral-500 shadow-[0_18px_50px_rgba(15,23,42,0.04)]">
-              Đang tải lịch sử đơn hàng...
-            </div>
+            <div className="rounded-[12px] bg-[rgba(255,255,255,0.02)] p-6 text-sm text-[rgba(240,235,224,0.64)]">Đang tải lịch sử đơn hàng...</div>
           ) : errorMessage ? (
-            <div className="rounded-[24px] bg-white p-8 text-sm text-neutral-500 shadow-[0_18px_50px_rgba(15,23,42,0.04)]">
-              {errorMessage}
-            </div>
+            <div className="rounded-[12px] bg-[rgba(255,255,255,0.02)] p-6 text-sm text-[rgba(240,235,224,0.64)]">{errorMessage}</div>
           ) : orders.length === 0 ? (
-            <div className="rounded-[24px] bg-white p-8 text-sm text-neutral-500 shadow-[0_18px_50px_rgba(15,23,42,0.04)]">
+            <div className="rounded-[12px] bg-[rgba(255,255,255,0.02)] p-6 text-sm text-[rgba(240,235,224,0.64)]">
               Bạn chưa có đơn hàng nào.
               <div className="mt-4">
-                <Link href="/products" className="font-medium text-neutral-900 underline-offset-4 transition hover:underline">
-                  Tiếp tục mua sắm
-                </Link>
+                <Link href="/products" className="font-medium text-[#c9a84c] underline-offset-4 transition hover:underline">Tiếp tục mua sắm</Link>
               </div>
             </div>
           ) : (
@@ -221,46 +163,37 @@ export default function ProfilePage() {
                 const shortId = String(order.id || '').replace(/^ORD-/, '');
 
                 return (
-                  <article
-                    key={order.id}
-                    className="rounded-[28px] bg-white p-6 shadow-[0_18px_50px_rgba(15,23,42,0.04)]"
-                  >
+                  <article key={order.id} className="rounded-[12px] bg-[rgba(255,255,255,0.02)] p-4">
                     <div className="flex flex-wrap items-start justify-between gap-4">
                       <div>
-                        <p className="text-xs uppercase tracking-[0.3em] text-neutral-400">Mã đơn hàng</p>
-                        <h3 className="mt-2 text-lg font-medium tracking-[-0.03em] text-neutral-950">
-                          #{shortId || order.id}
-                        </h3>
+                        <p className="text-xs uppercase tracking-[0.3em] text-[rgba(201,168,76,0.64)]">Mã đơn hàng</p>
+                        <h3 className="mt-2 text-lg font-medium tracking-[-0.03em] text-[#f0ebe0]">#{shortId || order.id}</h3>
                       </div>
 
                       <div className="text-right">
-                        <p className="text-xs uppercase tracking-[0.3em] text-neutral-400">Ngày đặt</p>
-                        <p className="mt-2 text-sm text-neutral-600">{formatDate(order.created_at)}</p>
+                        <p className="text-xs uppercase tracking-[0.3em] text-[rgba(201,168,76,0.64)]">Ngày đặt</p>
+                        <p className="mt-2 text-sm text-[rgba(240,235,224,0.64)]">{formatDate(order.created_at)}</p>
                       </div>
 
-                      <span className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${getStatusTone(order.order_status)}`}>
-                        {order.order_status === 'Completed' ? 'Chờ xác nhận' : order.order_status || 'Đang xử lý'}
-                      </span>
+                      <span className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${getStatusTone(order.order_status)}`}>{order.order_status === 'Completed' ? 'Chờ xác nhận' : order.order_status || 'Đang xử lý'}</span>
                     </div>
 
-                    <div className="mt-5 space-y-2 border-t border-neutral-100 pt-5 text-sm text-neutral-600">
+                    <div className="mt-4 space-y-2 border-t border-[rgba(201,168,76,0.06)] pt-4 text-sm text-[rgba(240,235,224,0.64)]">
                       {items.length > 0 ? (
                         items.slice(0, 4).map((item, index) => (
                           <div key={`${order.id}-${item.product_id || index}`} className="flex items-center justify-between gap-4">
                             <span className="truncate">{item.name}</span>
-                            <span className="shrink-0 text-neutral-400">x{item.quantity}</span>
+                            <span className="shrink-0 text-[rgba(240,235,224,0.6)]">x{item.quantity}</span>
                           </div>
                         ))
                       ) : (
-                        <p className="text-neutral-400">Chi tiết sản phẩm sẽ được cập nhật.</p>
+                        <p className="text-[rgba(240,235,224,0.56)]">Chi tiết sản phẩm sẽ được cập nhật.</p>
                       )}
                     </div>
 
-                    <div className="mt-5 flex items-center justify-between border-t border-neutral-100 pt-5">
-                      <span className="text-sm text-neutral-500">Tổng tiền</span>
-                      <span className="text-base font-semibold text-neutral-950">
-                        {formatVnd(order.total_amount_vnd)} VND
-                      </span>
+                    <div className="mt-4 flex items-center justify-between border-t border-[rgba(201,168,76,0.06)] pt-4">
+                      <span className="text-sm text-[rgba(240,235,224,0.64)]">Tổng tiền</span>
+                      <span className="text-base font-semibold text-[#f0ebe0]">{formatVnd(order.total_amount_vnd)} VND</span>
                     </div>
                   </article>
                 );

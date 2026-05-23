@@ -96,64 +96,74 @@ export default function LoginPage() {
   }
 
   return (
-    <section className="flex min-h-[calc(100vh-7rem)] items-center justify-center bg-[#fafaf8] px-4 py-12 sm:px-6 lg:px-8">
-      <div className="w-full max-w-md rounded-[28px] bg-white/92 p-8 shadow-[0_24px_70px_rgba(15,23,42,0.08)] sm:p-10">
-        <p className="text-[11px] uppercase tracking-[0.4em] text-neutral-400">Auth</p>
-        <h1 className="mt-4 text-4xl font-light tracking-[-0.05em] text-neutral-950">Đăng nhập</h1>
-        <p className="mt-2 text-sm leading-7 text-neutral-500">Tiếp tục hành trình mua sắm tinh gọn và thanh lịch.</p>
+    <section className="flex min-h-[calc(100vh-6.5rem)] items-start justify-center bg-[#0c0b09] px-4 py-12 sm:px-6 lg:px-8">
+      <div className="w-full max-w-md">
+        <div className="mb-6">
+          <p className="text-[10px] uppercase tracking-[0.28em] text-[rgba(201,168,76,0.64)]">Auth</p>
+          <h1 className="mt-2 text-3xl font-light text-[#f0ebe0]" style={{ fontFamily: 'var(--font-display)' }}>
+            Đăng nhập
+          </h1>
+          <p className="mt-1 text-sm text-[rgba(240,235,224,0.6)]">Tiếp tục hành trình mua sắm tinh gọn và thanh lịch.</p>
+        </div>
 
-        <form onSubmit={handleLogin} className="mt-8 space-y-6">
-          <label className="block border-b border-neutral-200 pb-3">
-            <span className="sr-only">Email</span>
-            <input
-              type="email"
-              required
-              value={form.email}
-              onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))}
-              placeholder="Email"
-              className="w-full bg-transparent text-sm text-neutral-900 outline-none placeholder:text-neutral-400"
-            />
-          </label>
+        <div className="rounded-[14px] border border-[rgba(201,168,76,0.06)] bg-[rgba(255,255,255,0.02)] p-6 shadow-[0_18px_50px_rgba(0,0,0,0.4)]">
+          <form onSubmit={handleLogin} className="space-y-4">
+            <label className="block">
+              <span className="sr-only">Email</span>
+              <input
+                type="email"
+                required
+                value={form.email}
+                onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))}
+                placeholder="Email"
+                className="w-full rounded-md bg-[rgba(255,255,255,0.02)] px-3 py-2 text-sm text-[#f0ebe0] outline-none placeholder:text-[rgba(240,235,224,0.36)]"
+              />
+            </label>
 
-          <label className="block border-b border-neutral-200 pb-3">
-            <span className="sr-only">Password</span>
-            <input
-              type="password"
-              required
-              value={form.password}
-              onChange={(event) => setForm((prev) => ({ ...prev, password: event.target.value }))}
-              placeholder="Mật khẩu"
-              className="w-full bg-transparent text-sm text-neutral-900 outline-none placeholder:text-neutral-400"
-            />
-          </label>
+            <label className="block">
+              <span className="sr-only">Password</span>
+              <input
+                type="password"
+                required
+                value={form.password}
+                onChange={(event) => setForm((prev) => ({ ...prev, password: event.target.value }))}
+                placeholder="Mật khẩu"
+                className="w-full rounded-md bg-[rgba(255,255,255,0.02)] px-3 py-2 text-sm text-[#f0ebe0] outline-none placeholder:text-[rgba(240,235,224,0.36)]"
+              />
+            </label>
 
-          {errorMessage ? <p className="text-sm text-red-600">{errorMessage}</p> : null}
+            {errorMessage ? <p className="text-sm text-rose-400">{errorMessage}</p> : null}
 
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="inline-flex h-12 w-full items-center justify-center rounded-full bg-neutral-950 px-5 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isSubmitting ? 'Đang đăng nhập...' : 'Đăng nhập'}
-          </button>
+            <div className="space-y-3">
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="inline-flex h-11 w-full items-center justify-center rounded-full bg-[#c9a84c] px-4 text-sm font-medium text-[#1a1208] transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isSubmitting ? 'Đang đăng nhập...' : 'Đăng nhập'}
+              </button>
 
-          <button
-            type="button"
-            onClick={handleGoogleLogin}
-            disabled={isGoogleSubmitting}
-            className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full border border-neutral-300 bg-white px-5 text-sm font-medium text-neutral-800 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <GoogleIcon />
-            {isGoogleSubmitting ? 'Đang xử lý Google...' : 'Đăng nhập bằng Google'}
-          </button>
-        </form>
+              <button
+                type="button"
+                onClick={handleGoogleLogin}
+                disabled={isGoogleSubmitting}
+                className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-full border border-[rgba(201,168,76,0.08)] bg-transparent px-4 text-sm font-medium text-[rgba(240,235,224,0.9)] transition hover:bg-[rgba(201,168,76,0.02)] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <span className="inline-flex h-4 w-4 items-center justify-center">
+                  <GoogleIcon />
+                </span>
+                <span className="text-sm">{isGoogleSubmitting ? 'Đang xử lý...' : 'Đăng nhập bằng Google'}</span>
+              </button>
+            </div>
+          </form>
 
-        <p className="mt-8 text-center text-sm text-neutral-500">
-          Chưa có tài khoản?{' '}
-          <Link href="/register" className="font-medium text-neutral-900 underline-offset-4 transition hover:underline">
-            Đăng ký
-          </Link>
-        </p>
+          <p className="mt-4 text-center text-sm text-[rgba(240,235,224,0.56)]">
+            Chưa có tài khoản?{' '}
+            <Link href="/register" className="font-medium text-[#c9a84c] underline-offset-4 transition hover:underline">
+              Đăng ký
+            </Link>
+          </p>
+        </div>
       </div>
     </section>
   );

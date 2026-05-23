@@ -3,7 +3,7 @@
 import { useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { BarChart3, ExternalLink, LayoutDashboard, LogOut, Package, ShoppingCart } from 'lucide-react';
+import { ExternalLink, LayoutDashboard, LogOut, Package, ShoppingCart } from 'lucide-react';
 import BrandLogo from '../../components/common/BrandLogo';
 import useStore from '../../store/useStore';
 
@@ -35,70 +35,67 @@ export default function AdminLayout({ children }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#f3f4f6] text-neutral-900 lg:grid lg:grid-cols-[292px_minmax(0,1fr)]">
-      <aside className="border-b border-white/10 bg-neutral-950 px-6 py-8 text-white lg:min-h-screen lg:border-b-0 lg:border-r lg:border-white/10">
-        <BrandLogo className="mb-10" width={156} height={46} variant="light" />
-        <div className="space-y-2">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.href;
-
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition ${
-                  isActive ? 'bg-white/10 text-white' : 'text-white/65 hover:bg-white/5 hover:text-white'
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                {item.label}
-              </Link>
-            );
-          })}
-        </div>
-        <div className="mt-10 rounded-[28px] border border-white/10 bg-white/5 p-4">
-          <div className="flex items-center gap-3">
-            <BarChart3 className="h-5 w-5 text-white/85" />
-            <p className="text-sm font-medium text-white">Admin shell</p>
-          </div>
-          <p className="mt-3 text-sm leading-6 text-white/65">
-            Tách riêng luồng vận hành, không lẫn với trải nghiệm mua hàng.
-          </p>
-        </div>
-      </aside>
-
-      <div className="flex min-h-screen flex-col">
-        <header className="flex items-center justify-between border-b border-neutral-200 bg-[#f3f4f6] px-4 py-4 sm:px-6 lg:px-8">
-          <div>
-            <p className="text-xs uppercase tracking-[0.35em] text-neutral-400">Admin</p>
-            <h1 className="mt-2 text-xl font-medium text-neutral-950">CentralTaste Control Room</h1>
-          </div>
-
+    <div className="min-h-screen bg-[#0c0b09] text-[#f0ebe0]">
+      <header className="sticky top-0 z-40 border-b border-[rgba(201,168,76,0.12)] bg-[rgba(12,11,9,0.88)] backdrop-blur-xl">
+        <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-4 px-4 py-4 sm:px-6 lg:px-8 xl:flex-row xl:items-center xl:justify-between">
           <div className="flex items-center gap-4">
+            <BrandLogo width={140} height={40} variant="light" />
+            <div className="hidden sm:block">
+              <p className="text-[10px] uppercase tracking-[0.38em] text-[rgba(201,168,76,0.7)]">Admin</p>
+              <p className="mt-1 text-sm text-[rgba(240,235,224,0.7)]">CentralTaste Control Room</p>
+            </div>
+          </div>
+
+          <nav className="flex items-center gap-2 overflow-x-auto rounded-full border border-[rgba(201,168,76,0.12)] bg-[rgba(255,255,255,0.03)] p-1">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = pathname === item.href;
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  title={item.label}
+                  aria-label={item.label}
+                  className={`inline-flex h-11 items-center gap-2 rounded-full px-4 text-sm font-medium transition ${
+                    isActive ? 'bg-[#c9a84c] text-[#1a1208]' : 'text-[rgba(240,235,224,0.76)] hover:bg-white/5 hover:text-white'
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  <span className="hidden md:inline">{item.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
+
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="hidden text-right sm:block">
+              <p className="text-sm font-medium text-[#f0ebe0]">{adminName}</p>
+            </div>
+
             <Link
               href="/"
-              className="inline-flex items-center gap-2 rounded-full border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition hover:border-neutral-400 hover:text-neutral-950"
+              title="Vào cửa hàng"
+              aria-label="Vào cửa hàng"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[rgba(240,235,224,0.18)] bg-[rgba(255,255,255,0.03)] text-[rgba(240,235,224,0.78)] transition hover:border-[rgba(201,168,76,0.55)] hover:text-[#c9a84c]"
             >
               <ExternalLink className="h-4 w-4" />
-              Vào cửa hàng
             </Link>
-            <div className="text-right">
-              <p className="text-sm font-medium text-neutral-900">{adminName}</p>
-              <p className="text-xs text-neutral-500">Administrator</p>
-            </div>
+
             <button
               type="button"
               onClick={handleLogout}
-              className="inline-flex items-center gap-2 rounded-full border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition hover:border-neutral-400 hover:text-neutral-950"
+              title="Đăng xuất"
+              aria-label="Đăng xuất"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[rgba(240,235,224,0.18)] bg-[rgba(255,255,255,0.03)] text-[rgba(240,235,224,0.78)] transition hover:border-[rgba(201,168,76,0.55)] hover:text-[#c9a84c]"
             >
               <LogOut className="h-4 w-4" />
-              Đăng xuất
             </button>
           </div>
-        </header>
-        <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
-      </div>
+        </div>
+      </header>
+
+      <main className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">{children}</main>
     </div>
   );
 }

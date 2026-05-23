@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { ImagePlus, Sparkles, Upload, WandSparkles } from 'lucide-react';
 import { UploadButton } from '../../../../utils/uploadthing';
 import api from '../../../../lib/api';
 
@@ -53,20 +54,20 @@ export default function AdminProductNewPage() {
   }
 
   return (
-    <section className="mx-auto w-full max-w-6xl rounded-[32px] border border-neutral-200 bg-white p-6 shadow-[0_20px_60px_rgba(15,23,42,0.05)] sm:p-8">
-      <div className="mb-8 flex items-start justify-between gap-4">
+    <section className="space-y-6 text-white">
+      <div className="flex items-center justify-between">
         <div>
-          <p className="text-xs uppercase tracking-[0.35em] text-neutral-400">Admin / Products</p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-neutral-950">Thêm sản phẩm</h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-neutral-600">
-            Tạo nhanh một sản phẩm mới với ảnh chính, thông tin mô tả và tồn kho.
-          </p>
+          <p className="text-[10px] uppercase tracking-[0.28em] text-[rgba(201,168,76,0.64)]">Admin / Products / New</p>
+          <h1 className="mt-2 text-3xl font-light" style={{ fontFamily: 'var(--font-display)' }}>
+            Thêm <em className="italic text-[#c9a84c]">sản phẩm</em>
+          </h1>
+          <p className="mt-1 text-sm text-[rgba(240,235,224,0.62)]">Tạo sản phẩm mới — ảnh chính, mô tả và thông tin cơ bản.</p>
         </div>
 
         <div className="flex items-center gap-3">
           <Link
             href="/admin/products"
-            className="inline-flex h-11 items-center justify-center rounded-full border border-neutral-200 bg-white px-5 text-sm font-medium text-neutral-700 transition hover:border-neutral-300 hover:text-neutral-950"
+            className="inline-flex items-center gap-2 rounded-full border border-[rgba(240,235,224,0.12)] px-4 py-2 text-[13px] font-medium text-[rgba(240,235,224,0.76)] transition hover:border-[rgba(201,168,76,0.35)] hover:text-[#c9a84c]"
           >
             Hủy
           </Link>
@@ -74,16 +75,17 @@ export default function AdminProductNewPage() {
             type="submit"
             form="product-new-form"
             disabled={isSubmitting}
-            className="inline-flex h-11 items-center justify-center rounded-full bg-neutral-950 px-5 text-sm font-medium text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-full bg-[#c9a84c] px-4 py-2 text-[13px] font-semibold text-[#1a1208] transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
           >
+            <Sparkles className="h-4 w-4" />
             {isSubmitting ? 'Đang lưu...' : 'Lưu sản phẩm'}
           </button>
         </div>
       </div>
 
-      <form id="product-new-form" onSubmit={handleSubmit} className="grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
+      <form id="product-new-form" onSubmit={handleSubmit} className="grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(360px,0.9fr)]">
         <div className="space-y-6">
-          <div className="grid gap-6 rounded-[28px] border border-neutral-200 bg-[#fbfbfc] p-5 sm:p-6">
+          <div className="grid gap-6 rounded-[20px] border border-[rgba(201,168,76,0.08)] bg-[rgba(255,255,255,0.02)] p-5 sm:p-6">
             <div className="grid gap-2">
               <FieldLabel>Tên sản phẩm</FieldLabel>
               <input
@@ -91,7 +93,7 @@ export default function AdminProductNewPage() {
                 value={form.name_vi}
                 onChange={(event) => setForm((prev) => ({ ...prev, name_vi: event.target.value }))}
                 placeholder="Nhập tên sản phẩm"
-                className="h-12 rounded-2xl border border-neutral-200 bg-white px-4 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-neutral-400"
+                className="h-12 rounded-2xl border border-[rgba(201,168,76,0.14)] bg-[#11100d] px-4 text-sm text-[#f0ebe0] outline-none transition placeholder:text-[rgba(240,235,224,0.3)] focus:border-[rgba(201,168,76,0.45)]"
               />
             </div>
 
@@ -104,7 +106,7 @@ export default function AdminProductNewPage() {
                   value={form.price_vnd}
                   onChange={(event) => setForm((prev) => ({ ...prev, price_vnd: event.target.value }))}
                   placeholder="0"
-                  className="h-12 rounded-2xl border border-neutral-200 bg-white px-4 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-neutral-400"
+                  className="h-12 rounded-2xl border border-[rgba(201,168,76,0.14)] bg-[#11100d] px-4 text-sm text-[#f0ebe0] outline-none transition placeholder:text-[rgba(240,235,224,0.3)] focus:border-[rgba(201,168,76,0.45)]"
                 />
               </label>
 
@@ -116,7 +118,7 @@ export default function AdminProductNewPage() {
                   value={form.stock}
                   onChange={(event) => setForm((prev) => ({ ...prev, stock: event.target.value }))}
                   placeholder="0"
-                  className="h-12 rounded-2xl border border-neutral-200 bg-white px-4 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-neutral-400"
+                  className="h-12 rounded-2xl border border-[rgba(201,168,76,0.14)] bg-[#11100d] px-4 text-sm text-[#f0ebe0] outline-none transition placeholder:text-[rgba(240,235,224,0.3)] focus:border-[rgba(201,168,76,0.45)]"
                 />
               </label>
             </div>
@@ -128,7 +130,7 @@ export default function AdminProductNewPage() {
                 value={form.summary_vi}
                 onChange={(event) => setForm((prev) => ({ ...prev, summary_vi: event.target.value }))}
                 placeholder="Mô tả ngắn cho sản phẩm"
-                className="rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-neutral-400"
+                className="rounded-2xl border border-[rgba(201,168,76,0.14)] bg-[#11100d] px-4 py-3 text-sm text-[#f0ebe0] outline-none transition placeholder:text-[rgba(240,235,224,0.3)] focus:border-[rgba(201,168,76,0.45)]"
               />
             </label>
 
@@ -139,7 +141,7 @@ export default function AdminProductNewPage() {
                 value={form.ingredients_vi}
                 onChange={(event) => setForm((prev) => ({ ...prev, ingredients_vi: event.target.value }))}
                 placeholder="Liệt kê thành phần"
-                className="rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-neutral-400"
+                className="rounded-2xl border border-[rgba(201,168,76,0.14)] bg-[#11100d] px-4 py-3 text-sm text-[#f0ebe0] outline-none transition placeholder:text-[rgba(240,235,224,0.3)] focus:border-[rgba(201,168,76,0.45)]"
               />
             </label>
 
@@ -150,35 +152,32 @@ export default function AdminProductNewPage() {
                 value={form.shelf_life_vi}
                 onChange={(event) => setForm((prev) => ({ ...prev, shelf_life_vi: event.target.value }))}
                 placeholder="Ví dụ: 30 ngày kể từ ngày sản xuất"
-                className="h-12 rounded-2xl border border-neutral-200 bg-white px-4 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-neutral-400"
+                className="h-12 rounded-2xl border border-[rgba(201,168,76,0.14)] bg-[#11100d] px-4 text-sm text-[#f0ebe0] outline-none transition placeholder:text-[rgba(240,235,224,0.3)] focus:border-[rgba(201,168,76,0.45)]"
               />
             </label>
           </div>
 
           {errorMessage ? (
-            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <div className="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
               {errorMessage}
             </div>
           ) : null}
 
           {toastMessage ? (
-            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+            <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
               {toastMessage}
             </div>
           ) : null}
         </div>
 
-        <aside className="space-y-6">
-          <div className="rounded-[28px] border border-dashed border-neutral-300 bg-[#fafafa] p-5 sm:p-6">
-            <div className="mb-4">
-              <p className="text-xs uppercase tracking-[0.32em] text-neutral-400">Upload ảnh</p>
-              <h2 className="mt-2 text-lg font-semibold text-neutral-950">Ảnh chính sản phẩm</h2>
-              <p className="mt-2 text-sm leading-6 text-neutral-600">
-                Tải lên ảnh sản phẩm để hiển thị ở storefront và danh sách quản trị.
-              </p>
+        <aside>
+          <div className="rounded-[20px] border border-[rgba(201,168,76,0.08)] bg-[rgba(255,255,255,0.02)] p-4">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.24em] text-[rgba(201,168,76,0.64)]">Ảnh chính</p>
+              <p className="mt-1 text-sm text-[rgba(240,235,224,0.58)]">Tải lên ảnh để hiển thị ở storefront và admin.</p>
             </div>
 
-            <div className="rounded-[24px] border border-neutral-200 bg-white p-4">
+            <div className="mt-3">
               <UploadButton
                 endpoint="mediaUploader"
                 onClientUploadComplete={(res) => {
@@ -193,27 +192,20 @@ export default function AdminProductNewPage() {
               />
 
               {mainImageUrl ? (
-                <div className="mt-5 space-y-3">
-                  <p className="text-xs uppercase tracking-[0.3em] text-neutral-400">Preview</p>
-                  <div className="overflow-hidden rounded-[20px] border border-neutral-200 bg-neutral-100">
-                    <img src={mainImageUrl} alt="Preview sản phẩm" className="h-56 w-full object-cover" />
-                  </div>
+                <div className="mt-4 overflow-hidden rounded-[12px] border border-[rgba(201,168,76,0.08)] bg-[#0f0e0b]">
+                  <img src={mainImageUrl} alt="Preview sản phẩm" className="h-44 w-full object-cover" />
                 </div>
               ) : (
-                <div className="mt-5 rounded-[20px] border border-neutral-200 bg-neutral-50 p-4 text-sm text-neutral-500">
+                <div className="mt-4 rounded-[12px] border border-dashed border-[rgba(201,168,76,0.08)] bg-[rgba(255,255,255,0.02)] p-3 text-sm text-[rgba(240,235,224,0.5)]">
                   Chưa có ảnh nào được tải lên.
                 </div>
               )}
             </div>
-          </div>
 
-          <div className="rounded-[28px] border border-neutral-200 bg-white p-5 sm:p-6">
-            <p className="text-xs uppercase tracking-[0.32em] text-neutral-400">Lưu ý</p>
-            <ul className="mt-4 space-y-3 text-sm leading-6 text-neutral-600">
-              <li>• Ảnh chính sẽ được lưu vào trường main_image_url.</li>
-              <li>• Các trường giá và tồn kho sẽ được ép sang số trước khi gửi.</li>
-              <li>• Nút Hủy quay lại danh sách sản phẩm để kiểm tra kết quả CRUD.</li>
-            </ul>
+            <div className="mt-4 text-sm text-[rgba(240,235,224,0.56)]">
+              <p>• Ảnh sẽ lưu vào `main_image_url`.</p>
+              <p>• Giá và tồn kho được ép sang số trước khi gửi.</p>
+            </div>
           </div>
         </aside>
       </form>

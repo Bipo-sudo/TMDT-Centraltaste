@@ -29,7 +29,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="vi" suppressHydrationWarning className={`${dmSans.variable} ${cormorant.variable}`}>
-      <body className="font-sans antialiased" suppressHydrationWarning>
+      <body className="font-sans antialiased bg-[#0b0a07] text-[#f0ebe0] min-h-screen" suppressHydrationWarning>
         {children}
       </body>
     </html>
