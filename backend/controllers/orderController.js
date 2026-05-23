@@ -2,6 +2,44 @@ const { pool } = require('../config/db');
 const { Resend } = require('resend');
 
 const resend = new Resend(process.env.RESEND_API_KEY);
+const ALLOWED_ORDER_STATUSES = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
+
+let hasEnsuredOrderItemsTable = false;
+
+async function ensureOrderItemsTable(connection) {
+  if (hasEnsuredOrderItemsTable) {
+    return;
+  }
+
+  const sql = `
+    CREATE TABLE IF NOT EXISTS order_items (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      order_id VARCHAR(50) NOT NULL,
+      product_id VARCHAR(50) NOT NULL,
+      quantity INT NOT NULL,
+      unit_price_vnd INT NOT NULL,
+      line_total_vnd INT NOT NULL,
+      CONSTRAINT fk_order_items_order
+        FOREIGN KEY (order_id)
+        REFERENCES orders(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+      CONSTRAINT fk_order_items_product
+        FOREIGN KEY (product_id)
+        REFERENCES products(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `;
+
+  if (connection) {
+    await connection.query(sql);
+  } else {
+    await pool.query(sql);
+  }
+
+  hasEnsuredOrderItemsTable = true;
+}
 
 function generateOrderId() {
   return `ORD-${Math.floor(100000 + Math.random() * 900000)}`;
@@ -83,6 +121,8 @@ async function createOrder(req, res, next) {
   const connection = await pool.getConnection();
 
   try {
+    await ensureOrderItemsTable(connection);
+
     console.log('TOKEN DECODED PAYLOAD:', req.user);
 
     if (!req.user || !req.user.is_verified) {
@@ -182,10 +222,20 @@ async function createOrder(req, res, next) {
     await connection.execute(
       `
         INSERT INTO orders (id, user_email, total_amount_vnd, payment_method, shipping_address, order_status)
-        VALUES (?, ?, ?, ?, ?, 'Completed')
+        VALUES (?, ?, ?, ?, ?, 'pending')
       `,
       [orderId, req.user.email, finalAmountVnd, payment_method, shipping_address.trim()]
     );
+
+    for (const item of orderItems) {
+      await connection.execute(
+        `
+          INSERT INTO order_items (order_id, product_id, quantity, unit_price_vnd, line_total_vnd)
+          VALUES (?, ?, ?, ?, ?)
+        `,
+        [orderId, item.product_id, item.quantity, item.unit_price_vnd, item.line_total_vnd]
+      );
+    }
 
     await connection.execute('DELETE FROM cart_items WHERE user_email = ?', [req.user.email]);
 
@@ -282,7 +332,146 @@ async function getMyOrders(req, res, next) {
   }
 }
 
+async function getAllOrders(req, res, next) {
+  try {
+    await ensureOrderItemsTable();
+
+    const [rows] = await pool.execute(
+      `
+        SELECT
+          o.id,
+          o.user_email,
+          u.full_name AS user_full_name,
+          o.total_amount_vnd,
+          o.payment_method,
+          o.shipping_address,
+          o.order_status,
+          o.created_at
+        FROM orders o
+        LEFT JOIN users u ON u.email = o.user_email
+        ORDER BY o.created_at DESC
+      `
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: 'Orders fetched successfully',
+      data: rows,
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+async function getOrderById(req, res, next) {
+  try {
+    await ensureOrderItemsTable();
+
+    const { id } = req.params;
+
+    const [[orderRows], [itemRows]] = await Promise.all([
+      pool.execute(
+        `
+          SELECT
+            o.id,
+            o.user_email,
+            u.full_name AS user_full_name,
+            o.total_amount_vnd,
+            o.payment_method,
+            o.shipping_address,
+            o.order_status,
+            o.created_at
+          FROM orders o
+          LEFT JOIN users u ON u.email = o.user_email
+          WHERE o.id = ?
+          LIMIT 1
+        `,
+        [id]
+      ),
+      pool.execute(
+        `
+          SELECT
+            oi.id,
+            oi.order_id,
+            oi.product_id,
+            oi.quantity,
+            oi.unit_price_vnd,
+            oi.line_total_vnd,
+            p.name_vi,
+            p.name_en,
+            p.main_image_url
+          FROM order_items oi
+          LEFT JOIN products p ON p.id = oi.product_id
+          WHERE oi.order_id = ?
+          ORDER BY oi.id ASC
+        `,
+        [id]
+      ),
+    ]);
+
+    const order = orderRows[0];
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found',
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Order fetched successfully',
+      data: {
+        ...order,
+        items: itemRows,
+      },
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+async function updateOrderStatus(req, res, next) {
+  try {
+    const { id } = req.params;
+    const nextStatus = String(req.body?.status || '').trim().toLowerCase();
+
+    if (!ALLOWED_ORDER_STATUSES.includes(nextStatus)) {
+      return res.status(400).json({
+        success: false,
+        message: `status must be one of: ${ALLOWED_ORDER_STATUSES.join(', ')}`,
+      });
+    }
+
+    const [result] = await pool.execute(
+      'UPDATE orders SET order_status = ? WHERE id = ?',
+      [nextStatus, id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found',
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Order status updated successfully',
+      data: {
+        id,
+        order_status: nextStatus,
+      },
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
 module.exports = {
   createOrder,
+  getAllOrders,
+  getOrderById,
   getMyOrders,
+  updateOrderStatus,
 };

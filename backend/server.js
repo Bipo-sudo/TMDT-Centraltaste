@@ -6,6 +6,7 @@ const { testConnection } = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
 const productRoutes = require('./routes/productRoutes');
 const orderRoutes = require('./routes/orderRoutes');
+const dashboardRoutes = require('./routes/dashboardRoutes');
 const userRoutes = require('./routes/userRoutes');
 const cartRoutes = require('./routes/cartRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
@@ -23,6 +24,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/uploadthing', uploadThingRouteHandler);
 app.use('/api/uploadthing', uploadRoutes);
 

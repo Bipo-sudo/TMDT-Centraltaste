@@ -150,6 +150,100 @@ async function createProduct(req, res, next) {
   }
 }
 
+async function updateProduct(req, res, next) {
+  try {
+    const { id } = req.params;
+    const {
+      name_vi,
+      price_vnd,
+      stock,
+      summary_vi,
+      ingredients_vi,
+      shelf_life_vi,
+      main_image_url,
+    } = req.body;
+
+    const normalizedNameVi = String(name_vi || '').trim();
+
+    if (!normalizedNameVi) {
+      return res.status(400).json({
+        success: false,
+        message: 'Tên sản phẩm là bắt buộc',
+      });
+    }
+
+    const [existingRows] = await pool.execute(
+      'SELECT id FROM products WHERE id = ? LIMIT 1',
+      [id]
+    );
+
+    if (existingRows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product not found',
+      });
+    }
+
+    await pool.execute(
+      `
+        UPDATE products
+        SET
+          name_vi = ?,
+          name_en = ?,
+          price_vnd = ?,
+          stock = ?,
+          summary_vi = ?,
+          ingredients_vi = ?,
+          shelf_life_vi = ?,
+          main_image_url = ?
+        WHERE id = ?
+      `,
+      [
+        normalizedNameVi,
+        normalizedNameVi,
+        Number(price_vnd || 0),
+        Number(stock || 0),
+        summary_vi || null,
+        ingredients_vi || null,
+        shelf_life_vi || null,
+        main_image_url || null,
+        id,
+      ]
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: 'Product updated successfully',
+      data: { id },
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+async function deleteProduct(req, res, next) {
+  try {
+    const { id } = req.params;
+
+    const [result] = await pool.execute('DELETE FROM products WHERE id = ?', [id]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product not found',
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Product deleted successfully',
+      data: { id },
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
 async function getTrendingProducts(req, res, next) {
   try {
     const [rows] = await pool.execute(
@@ -301,6 +395,8 @@ async function getProductById(req, res, next) {
 
 module.exports = {
   createProduct,
+  updateProduct,
+  deleteProduct,
   getAllProducts,
   getTrendingProducts,
   incrementViewCount,
