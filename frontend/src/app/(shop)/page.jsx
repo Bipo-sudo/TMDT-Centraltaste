@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { ArrowRight, Play } from 'lucide-react';
+import { ArrowRight, Volume2, VolumeX } from 'lucide-react';
 import api from '../../lib/api';
 import useStore from '../../store/useStore';
 
@@ -168,9 +168,12 @@ export default function HomePage() {
   const isAuth = useStore((s) => s.isAuthenticated);
   const [products, setProducts] = useState([]);
   const [loading, setLoading]   = useState(true);
+  const [isStoryAudioEnabled, setIsStoryAudioEnabled] = useState(false);
 
   // Parallax scroll for hero
   const heroRef = useRef(null);
+  const storyVideoRef = useRef(null);
+  const storyFrameRef = useRef(null);
   const { scrollY } = useScroll();
   const heroOpacity = useTransform(scrollY, [0, 380], [1, 0]);
   const heroY       = useTransform(scrollY, [0, 380], [0, 72]);
@@ -189,7 +192,90 @@ export default function HomePage() {
     })();
   }, []);
 
+  useEffect(() => {
+    try {
+      const savedPreference = window.localStorage.getItem('centraltaste-story-audio-enabled');
+      if (savedPreference !== null) {
+        setIsStoryAudioEnabled(savedPreference === 'true');
+      }
+    } catch {
+      // Ignore storage issues and keep the default muted state.
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem('centraltaste-story-audio-enabled', String(isStoryAudioEnabled));
+    } catch {
+      // Ignore storage issues.
+    }
+  }, [isStoryAudioEnabled]);
+
   const displayProducts = products.length > 0 ? products : PLACEHOLDER_PRODUCTS;
+
+  useEffect(() => {
+    const video = storyVideoRef.current;
+    const frame = storyFrameRef.current;
+
+    if (!video || !frame) {
+      return undefined;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          video.muted = !isStoryAudioEnabled;
+          const playPromise = video.play();
+          if (playPromise && typeof playPromise.catch === 'function') {
+            playPromise.catch(() => {
+              video.muted = true;
+              video.play().catch(() => {});
+              setIsStoryAudioEnabled(false);
+            });
+          }
+        } else {
+          video.pause();
+        }
+      },
+      {
+        threshold: 0.55,
+        rootMargin: '80px 0px',
+      }
+    );
+
+    observer.observe(frame);
+
+    return () => {
+      observer.disconnect();
+      video.pause();
+    };
+  }, [isStoryAudioEnabled]);
+
+  useEffect(() => {
+    const video = storyVideoRef.current;
+    if (!video) {
+      return;
+    }
+
+    video.muted = !isStoryAudioEnabled;
+    if (!isStoryAudioEnabled) {
+      return;
+    }
+
+    const activeSection = storyFrameRef.current;
+    const rect = activeSection?.getBoundingClientRect();
+    const isInView = rect && rect.top < window.innerHeight * 0.8 && rect.bottom > window.innerHeight * 0.2;
+
+    if (isInView) {
+      const playPromise = video.play();
+      if (playPromise && typeof playPromise.catch === 'function') {
+        playPromise.catch(() => {
+          video.muted = true;
+          setIsStoryAudioEnabled(false);
+        });
+      }
+    }
+  }, [isStoryAudioEnabled]);
 
   return (
     <div className="ct-page">
@@ -322,18 +408,36 @@ export default function HomePage() {
         </motion.div>
 
         <motion.div
+          ref={storyFrameRef}
           initial={{ opacity: 0, x: 32 }}
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
           className="ct-video-frame"
         >
+          <video
+            ref={storyVideoRef}
+            className="ct-video-media"
+            src="/assets/videos/background.mp4"
+            muted={!isStoryAudioEnabled}
+            loop
+            playsInline
+            preload="metadata"
+            aria-label="Video câu chuyện thương hiệu"
+          />
+          <div className="ct-video-overlay" aria-hidden="true" />
           <div className="ct-video-inner">
-            <button className="ct-play-btn" aria-label="Xem video câu chuyện thương hiệu">
-              <Play size={24} fill="currentColor" aria-hidden="true" />
-            </button>
-            <p className="ct-video-caption">Xem video câu chuyện thương hiệu</p>
           </div>
+          <button
+            type="button"
+            className="ct-video-sound-toggle"
+            onClick={() => setIsStoryAudioEnabled((current) => !current)}
+            aria-label={isStoryAudioEnabled ? 'Tắt âm thanh video' : 'Bật âm thanh video'}
+            aria-pressed={isStoryAudioEnabled}
+          >
+            {isStoryAudioEnabled ? <Volume2 size={16} aria-hidden="true" /> : <VolumeX size={16} aria-hidden="true" />}
+            <span>{isStoryAudioEnabled ? 'Âm thanh' : 'Tắt tiếng'}</span>
+          </button>
         </motion.div>
       </section>
 
