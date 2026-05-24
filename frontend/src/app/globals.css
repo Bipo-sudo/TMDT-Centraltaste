@@ -59,6 +59,14 @@ button[class*="bg-white"] svg, button[class*="bg-white"] svg * {
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:rgba(201,168,76,0.3);border-radius:99px;}
 
+.scrollbar-hide{
+  -ms-overflow-style:none;
+  scrollbar-width:none;
+}
+.scrollbar-hide::-webkit-scrollbar{
+  display:none;
+}
+
 /* ════════════════════════════════════════════════════════
    PAGE WRAPPER
 ════════════════════════════════════════════════════════ */
@@ -284,7 +292,7 @@ button[class*="bg-white"] svg, button[class*="bg-white"] svg * {
    PRODUCT STRIP
 ════════════════════════════════════════════════════════ */
 .ct-strip-outer{
-  padding:0 32px 32px;
+  padding:0 16px 20px;
   overflow-x:auto;
   -webkit-overflow-scrolling:touch;
   scrollbar-width:none;
@@ -292,7 +300,7 @@ button[class*="bg-white"] svg, button[class*="bg-white"] svg * {
 .ct-strip-outer::-webkit-scrollbar{display:none;}
 
 .ct-strip{
-  display:flex;gap:16px;
+  display:flex;gap:12px;
   width:max-content;
 }
 
@@ -551,4 +559,28 @@ button[class*="bg-white"] svg, button[class*="bg-white"] svg * {
   .ct-pillar:last-child{border-bottom:none;}
   .ct-strip-outer{padding:0 20px 28px;}
   .ct-sec-label{padding:16px 20px 12px;}
+}
+
+/* ── Thêm vào cuối file globals.css ─────────────────────────
+   (Chỉ thêm phần này, không xóa code cũ)
+─────────────────────────────────────────────────────────── */
+
+/* Skeleton shimmer keyframe */
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 0.4; }
+  50%       { opacity: 0.9; }
+}
+
+/* Product grid responsive — bổ sung thêm breakpoints */
+@media (max-width: 640px) {
+  /* Products page padding thu hẹp trên mobile */
+  .products-grid-shell {
+    padding: 24px 16px 60px !important;
+  }
+}
+
+/* Fix: đảm bảo product card không bị stretch toàn màn hình */
+.product-card-wrap {
+  min-width: 0;        /* fix grid stretch */
+  height: 100%;
 }
