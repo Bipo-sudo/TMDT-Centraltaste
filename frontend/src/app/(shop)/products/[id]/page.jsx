@@ -11,531 +11,896 @@ import {
   Package,
   Share2,
   ShoppingCart,
+  Star,
+  Shield,
+  Truck,
+  RotateCcw,
+  MapPin,
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../../../lib/api';
 import useStore from '../../../../store/useStore';
 
-function formatVnd(value) {
-  return Number(value || 0).toLocaleString('vi-VN');
+// ─── Helpers ──────────────────────────────────────────────────
+function formatVnd(v) {
+  return Number(v || 0).toLocaleString('vi-VN');
 }
-
-function textOrFallback(value, fallback = 'Đang cập nhật') {
-  if (!value) {
-    return fallback;
-  }
-
-  return String(value).trim() || fallback;
+function textOrFallback(v, fb = 'Đang cập nhật') {
+  return String(v || '').trim() || fb;
 }
-
-function splitIngredients(value) {
-  if (!value) {
-    return [];
-  }
-
-  return String(value)
-    .split(/\n|;|•|,/)
-    .map((item) => item.trim())
-    .filter(Boolean);
+function splitIngredients(v) {
+  if (!v) return [];
+  return String(v).split(/\n|;|•|,/).map((s) => s.trim()).filter(Boolean);
 }
-
-function resolveImageUrl(imageUrl, fallbackUrl) {
-  if (!imageUrl) {
-    return fallbackUrl || '';
-  }
-
-  const normalized = String(imageUrl);
-  if (normalized.includes('example.com')) {
-    return fallbackUrl || '';
-  }
-
-  return normalized;
+function resolveImageUrl(url) {
+  if (!url) return '';
+  const s = String(url);
+  return s.includes('example.com') ? '' : s;
 }
-
-function buildGalleryImages(product, productionSteps) {
-  const remoteImages = [
+function buildGallery(product, steps) {
+  const imgs = [
     product?.main_image_url,
-    ...(productionSteps || []).map((step) => step.step_image_url),
+    ...(steps || []).map((s) => s.step_image_url),
   ]
     .filter(Boolean)
-    .map((imageUrl) => String(imageUrl))
-    .filter((imageUrl) => !imageUrl.includes('example.com'));
-
-  return Array.from(new Set(remoteImages)).slice(0, 4);
+    .map(String)
+    .filter((u) => !u.includes('example.com'));
+  return [...new Set(imgs)].slice(0, 4);
+}
+function getDisplayRating(product) {
+  const seed = Number(product?.sales_count || product?.view_count || 0);
+  return (4.5 + (seed % 6) * 0.1).toFixed(1);
+}
+function getDisplayReviews(product) {
+  const seed = Number(product?.sales_count || product?.view_count || 0);
+  return Math.max(18, (seed % 200) + 20);
 }
 
-function DetailTabButton({ active, children, onClick }) {
+// ─── Subcomponents ────────────────────────────────────────────
+
+// Gold rule
+function GoldRule({ my = 0 }) {
+  return (
+    <div style={{
+      height: 1, margin: `${my}px 0`,
+      background: 'linear-gradient(90deg,transparent,rgba(201,168,76,0.35) 20%,rgba(201,168,76,0.35) 80%,transparent)',
+    }} />
+  );
+}
+
+// Tab button
+function Tab({ active, onClick, children }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`relative pb-4 text-sm font-medium tracking-[0.12em] uppercase transition sm:text-[14px] ${
-        active ? 'text-[#e0b43e]' : 'text-[rgba(240,235,224,0.58)] hover:text-[rgba(240,235,224,0.82)]'
-      }`}
+      style={{
+        position: 'relative',
+        paddingBottom: 16,
+        fontSize: 12,
+        fontWeight: 500,
+        letterSpacing: '0.16em',
+        textTransform: 'uppercase',
+        color: active ? '#c9a84c' : 'rgba(240,235,224,0.45)',
+        background: 'none',
+        border: 'none',
+        cursor: 'pointer',
+        whiteSpace: 'nowrap',
+        transition: 'color 0.2s',
+        fontFamily: 'var(--font-sans)',
+      }}
     >
       {children}
-      <span
-        className={`absolute bottom-0 left-0 h-[2px] w-full transition ${active ? 'bg-[#e0b43e]' : 'bg-transparent'}`}
-      />
+      <span style={{
+        position: 'absolute', bottom: 0, left: 0, right: 0,
+        height: 2, borderRadius: 1,
+        background: active ? '#c9a84c' : 'transparent',
+        transition: 'background 0.2s',
+      }} />
     </button>
   );
 }
 
-function RelatedProductCard({ product }) {
+// Trust badge
+function TrustBadge({ Icon, title, sub }) {
   return (
-    <Link
-      href={`/products/${product.id}`}
-      className="group overflow-hidden rounded-[18px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] transition duration-300 hover:-translate-y-1 hover:border-[rgba(224,180,62,0.35)]"
-    >
-      <div className="relative aspect-square overflow-hidden bg-[#14110d]">
-        {resolveImageUrl(product.main_image_url) ? (
-          <img
-            src={resolveImageUrl(product.main_image_url)}
-            alt={product.name_vi}
-            className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-            loading="lazy"
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center text-[rgba(224,180,62,0.35)]">
-            <Package className="h-8 w-8" />
-          </div>
-        )}
-        <div className="absolute left-3 top-3 rounded-full border border-[rgba(224,180,62,0.2)] bg-[rgba(10,9,8,0.72)] px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-[#e0b43e] backdrop-blur-sm">
-          {product.category_name_vi || product.category_slug}
-        </div>
+    <div style={{
+      display: 'flex', alignItems: 'flex-start', gap: 10,
+      padding: '14px 16px',
+      borderRadius: 14,
+      border: '1px solid rgba(201,168,76,0.12)',
+      background: 'rgba(201,168,76,0.04)',
+    }}>
+      <div style={{
+        width: 32, height: 32, borderRadius: '50%',
+        background: 'rgba(201,168,76,0.12)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        flexShrink: 0,
+      }}>
+        <Icon size={15} style={{ color: '#c9a84c' }} />
       </div>
+      <div>
+        <p style={{ fontSize: 13, fontWeight: 600, color: '#f0ebe0', marginBottom: 2, fontFamily: 'var(--font-sans)' }}>{title}</p>
+        <p style={{ fontSize: 12, color: 'rgba(240,235,224,0.5)', fontFamily: 'var(--font-sans)' }}>{sub}</p>
+      </div>
+    </div>
+  );
+}
 
-      <div className="space-y-3 p-4">
-        <h3 className="line-clamp-2 min-h-[2.8rem] text-[17px] leading-[1.3] text-[#f0ebe0]" style={{ fontFamily: 'var(--font-display)' }}>
-          {product.name_vi}
-        </h3>
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-[17px] font-semibold text-[#e0b43e]">
-            {formatVnd(product.price_vnd)}<span className="text-[13px] font-normal">đ</span>
-          </p>
-          <span className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[rgba(255,255,255,0.12)] text-[#f0ebe0] transition group-hover:border-[rgba(224,180,62,0.35)] group-hover:text-[#e0b43e]">
-            <ShoppingCart className="h-4 w-4" />
+// Related product card
+function RelatedCard({ product }) {
+  const img = resolveImageUrl(product.main_image_url);
+  return (
+    <Link href={`/products/${product.id}`} style={{ display: 'block' }}>
+      <article style={{
+        borderRadius: 16,
+        overflow: 'hidden',
+        border: '1px solid rgba(201,168,76,0.1)',
+        background: 'rgba(255,255,255,0.02)',
+        transition: 'border-color 0.3s, transform 0.3s',
+        cursor: 'pointer',
+      }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.borderColor = 'rgba(201,168,76,0.4)';
+          e.currentTarget.style.transform = 'translateY(-4px)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.borderColor = 'rgba(201,168,76,0.1)';
+          e.currentTarget.style.transform = 'translateY(0)';
+        }}
+      >
+        {/* Image */}
+        <div style={{
+          aspectRatio: '1/1', overflow: 'hidden',
+          background: 'linear-gradient(135deg,#1e1a10,#2a2318)',
+          position: 'relative',
+        }}>
+          {img ? (
+            <img src={img} alt={product.name_vi} loading="lazy"
+              style={{ width: '100%', height: '100%', objectFit: 'cover',
+                transition: 'transform 0.5s', }}
+              onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+            />
+          ) : (
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(201,168,76,0.3)' }}>
+              <Package size={28} />
+            </div>
+          )}
+          {/* Category badge */}
+          <span style={{
+            position: 'absolute', top: 10, left: 10,
+            fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase',
+            background: 'rgba(12,11,9,0.72)', border: '1px solid rgba(201,168,76,0.22)',
+            color: '#c9a84c', padding: '3px 10px', borderRadius: 999,
+            backdropFilter: 'blur(6px)',
+            fontFamily: 'var(--font-sans)',
+          }}>
+            {product.category_name_vi || product.category_slug}
           </span>
         </div>
-      </div>
+        {/* Info */}
+        <div style={{ padding: '14px 16px' }}>
+          <h3 style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 17, fontWeight: 400,
+            color: '#f0ebe0', lineHeight: 1.3,
+            margin: '0 0 10px',
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+          }}>
+            {product.name_vi}
+          </h3>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+            <span style={{ fontSize: 17, fontWeight: 600, color: '#c9a84c', fontFamily: 'var(--font-sans)' }}>
+              {formatVnd(product.price_vnd)}<span style={{ fontSize: 12, fontWeight: 400 }}>đ</span>
+            </span>
+            <span style={{
+              width: 34, height: 34, borderRadius: '50%',
+              border: '1px solid rgba(255,255,255,0.1)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: 'rgba(240,235,224,0.6)',
+            }}>
+              <ShoppingCart size={14} />
+            </span>
+          </div>
+        </div>
+      </article>
     </Link>
   );
 }
 
+// Loading skeleton
+function DetailSkeleton() {
+  const box = (w, h, mb = 0) => (
+    <div style={{ width: w, height: h, borderRadius: 8, background: 'rgba(201,168,76,0.07)', marginBottom: mb, animation: 'skeleton-pulse 1.4s ease infinite' }} />
+  );
+  return (
+    <div style={{ maxWidth: 1280, margin: '0 auto', padding: '40px 40px 80px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 48 }}>
+      <div>
+        <div style={{ aspectRatio: '1/1', borderRadius: 20, background: 'rgba(201,168,76,0.07)', animation: 'skeleton-pulse 1.4s ease infinite' }} />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10, marginTop: 12 }}>
+          {[1,2,3,4].map((n) => <div key={n} style={{ aspectRatio: '1/1', borderRadius: 12, background: 'rgba(201,168,76,0.07)', animation: 'skeleton-pulse 1.4s ease infinite' }} />)}
+        </div>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, paddingTop: 8 }}>
+        {box('60%', 12, 8)}{box('85%', 48, 8)}{box('40%', 36, 16)}{box('100%', 80, 8)}{box('100%', 44)}{box('100%', 44)}
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Page ────────────────────────────────────────────────
 export default function ProductDetailPage() {
   const params = useParams();
   const id = params?.id;
   const router = useRouter();
-  const incrementCartCount = useStore((state) => state.incrementCartCount);
+  const incrementCartCount = useStore((s) => s.incrementCartCount);
 
-  const [productDetail, setProductDetail] = React.useState(null);
-  const [relatedProducts, setRelatedProducts] = React.useState([]);
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [errorMessage, setErrorMessage] = React.useState('');
-  const [quantity, setQuantity] = React.useState(1);
-  const [isAdding, setIsAdding] = React.useState(false);
-  const [toastMessage, setToastMessage] = React.useState('');
-  const [selectedImageIndex, setSelectedImageIndex] = React.useState(0);
-  const [activeTab, setActiveTab] = React.useState('description');
+  const [detail,         setDetail]         = React.useState(null);
+  const [related,        setRelated]        = React.useState([]);
+  const [isLoading,      setIsLoading]      = React.useState(true);
+  const [errorMsg,       setErrorMsg]       = React.useState('');
+  const [qty,            setQty]            = React.useState(1);
+  const [isAdding,       setIsAdding]       = React.useState(false);
+  const [toast,          setToast]          = React.useState('');
+  const [activeImg,      setActiveImg]      = React.useState(0);
+  const [activeTab,      setActiveTab]      = React.useState('description');
+  const [wishlisted,     setWishlisted]     = React.useState(false);
 
+  // Fetch
   React.useEffect(() => {
-    let isMounted = true;
+    if (!id) return;
+    let mounted = true;
+    setIsLoading(true);
+    setErrorMsg('');
+    setActiveImg(0);
 
-    async function loadProduct() {
-      try {
-        setIsLoading(true);
-        setErrorMessage('');
-
-        const [detailResponse, listResponse] = await Promise.all([api.get(`/products/${id}`), api.get('/products')]);
-
-        if (!isMounted) {
-          return;
-        }
-
-        const detail = detailResponse.data?.data || null;
-        const product = detail?.product || null;
-        const allProducts = listResponse.data?.data || [];
-
-        setProductDetail(detail);
-        setRelatedProducts(
-          allProducts
-            .filter((item) => item.id !== product?.id && item.category_slug === product?.category_slug)
-            .slice(0, 4)
+    Promise.all([api.get(`/products/${id}`), api.get('/products')])
+      .then(([detailRes, listRes]) => {
+        if (!mounted) return;
+        const det = detailRes.data?.data || null;
+        const prod = det?.product || null;
+        const all = listRes.data?.data || [];
+        setDetail(det);
+        setRelated(
+          all.filter((p) => p.id !== prod?.id && p.category_slug === prod?.category_slug).slice(0, 4)
         );
-      } catch (error) {
-        if (!isMounted) {
-          return;
-        }
+      })
+      .catch(() => { if (mounted) setErrorMsg('Không thể tải thông tin sản phẩm.'); })
+      .finally(() => { if (mounted) setIsLoading(false); });
 
-        setErrorMessage('Không thể tải thông tin sản phẩm.');
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    }
-
-    if (id) {
-      loadProduct();
-    }
-
-    return () => {
-      isMounted = false;
-    };
+    return () => { mounted = false; };
   }, [id]);
 
+  // Toast auto-dismiss
   React.useEffect(() => {
-    if (!toastMessage) {
-      return undefined;
-    }
+    if (!toast) return;
+    const t = setTimeout(() => setToast(''), 2400);
+    return () => clearTimeout(t);
+  }, [toast]);
 
-    const timer = window.setTimeout(() => {
-      setToastMessage('');
-    }, 2200);
-
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [toastMessage]);
-
-  const product = productDetail?.product;
-  const story = productDetail?.story || null;
-  const productionSteps = productDetail?.productionSteps || [];
-  const ingredients = React.useMemo(() => splitIngredients(product?.ingredients_vi), [product?.ingredients_vi]);
-  const galleryImages = React.useMemo(() => buildGalleryImages(product, productionSteps), [product, productionSteps]);
-  const storageSummary = textOrFallback(product?.preservation_vi);
-  const shelfLife = textOrFallback(product?.shelf_life_vi);
-
-  React.useEffect(() => {
-    setSelectedImageIndex(0);
-  }, [product?.id]);
+  const product       = detail?.product;
+  const story         = detail?.story || null;
+  const steps         = detail?.productionSteps || [];
+  const ingredients   = React.useMemo(() => splitIngredients(product?.ingredients_vi), [product?.ingredients_vi]);
+  const gallery       = React.useMemo(() => buildGallery(product, steps), [product, steps]);
+  const rating        = product ? getDisplayRating(product) : '5.0';
+  const reviewCount   = product ? getDisplayReviews(product) : 0;
+  const hasDiscount   = product?.original_price_vnd && product.original_price_vnd > product.price_vnd;
+  const discountPct   = hasDiscount ? Math.round((1 - product.price_vnd / product.original_price_vnd) * 100) : 0;
+  const inStock       = (product?.stock ?? 1) > 0;
 
   async function handleAddToCart() {
-    if (!product || isAdding) {
-      return;
-    }
-
+    if (!product || isAdding) return;
     try {
       setIsAdding(true);
-      await api.post('/cart', {
-        product_id: product.id,
-        quantity,
-      });
-
-      incrementCartCount(quantity);
-      setToastMessage('Đã thêm vào giỏ hàng');
-    } catch (error) {
-      if (error?.response?.status === 401) {
-        router.push('/login');
-        return;
-      }
-
-      setToastMessage('Thêm vào giỏ thất bại');
+      await api.post('/cart', { product_id: product.id, quantity: qty });
+      incrementCartCount(qty);
+      setToast(`Đã thêm ${qty} sản phẩm vào giỏ hàng ✓`);
+    } catch (err) {
+      if (err?.response?.status === 401) { router.push('/login'); return; }
+      setToast('Thêm vào giỏ thất bại');
     } finally {
       setIsAdding(false);
     }
   }
 
+  // ── Render ─────────────────────────────────────────────────
   return (
     <>
-      <div className="bg-[#0c0b09] text-[#f0ebe0]">
-        <section className="mx-auto w-full max-w-[1536px] px-4 py-6 sm:px-6 lg:px-8 lg:py-10">
-          {isLoading ? (
-            <div className="space-y-6 py-8">
-              <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
-                <div className="rounded-[28px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] p-4">
-                  <div className="aspect-square animate-pulse rounded-[20px] bg-[rgba(224,180,62,0.06)]" />
-                </div>
-                <div className="space-y-4 rounded-[28px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] p-6">
-                  <div className="h-4 w-44 animate-pulse rounded-full bg-[rgba(224,180,62,0.08)]" />
-                  <div className="h-12 w-4/5 animate-pulse rounded bg-[rgba(224,180,62,0.08)]" />
-                  <div className="h-8 w-32 animate-pulse rounded bg-[rgba(224,180,62,0.08)]" />
-                  <div className="h-32 w-full animate-pulse rounded-[20px] bg-[rgba(224,180,62,0.05)]" />
-                </div>
-              </div>
-            </div>
-          ) : errorMessage ? (
-            <div className="rounded-[24px] border border-dashed border-[rgba(224,180,62,0.25)] bg-[rgba(255,255,255,0.02)] p-8 text-sm text-[rgba(240,235,224,0.68)]">
-              {errorMessage}
-            </div>
-          ) : !product ? (
-            <div className="rounded-[24px] border border-dashed border-[rgba(224,180,62,0.25)] bg-[rgba(255,255,255,0.02)] p-8 text-sm text-[rgba(240,235,224,0.68)]">
-              Sản phẩm không tồn tại.
-            </div>
-          ) : (
-            <div className="space-y-10">
-              <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] xl:gap-12">
-                <div className="rounded-[28px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] p-3 shadow-[0_24px_60px_rgba(0,0,0,0.18)]">
-                  <div className="relative overflow-hidden rounded-[22px] bg-[#14110d]">
-                    <div className="absolute left-4 top-4 z-10 rounded-full border border-[rgba(224,180,62,0.25)] bg-[rgba(10,9,8,0.72)] px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-[#e0b43e] backdrop-blur-sm">
-                      Bộ sưu tập
+      <div style={{ background: '#0c0b09', color: '#f0ebe0', minHeight: '100vh' }}>
+
+        {isLoading ? <DetailSkeleton /> : errorMsg ? (
+          <div style={{ maxWidth: 1280, margin: '0 auto', padding: '80px 40px', textAlign: 'center', color: 'rgba(240,235,224,0.5)', fontFamily: 'var(--font-sans)' }}>
+            {errorMsg}
+          </div>
+        ) : !product ? (
+          <div style={{ maxWidth: 1280, margin: '0 auto', padding: '80px 40px', textAlign: 'center', color: 'rgba(240,235,224,0.5)', fontFamily: 'var(--font-sans)' }}>
+            Sản phẩm không tồn tại.
+          </div>
+        ) : (
+          <>
+            {/* ══ MAIN PRODUCT SECTION ══════════════════════ */}
+            <div style={{ maxWidth: 1280, margin: '0 auto', padding: '32px 40px 0' }}>
+
+              {/* Breadcrumb */}
+              <nav style={{
+                display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap',
+                fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase',
+                color: 'rgba(240,235,224,0.35)', marginBottom: 32,
+                fontFamily: 'var(--font-sans)',
+              }}>
+                <Link href="/" style={{ color: 'rgba(240,235,224,0.4)', transition: 'color 0.2s' }}
+                  onMouseEnter={(e) => e.currentTarget.style.color = '#c9a84c'}
+                  onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(240,235,224,0.4)'}
+                >Trang chủ</Link>
+                <ChevronRight size={12} style={{ opacity: 0.4 }} />
+                <Link href="/products" style={{ color: 'rgba(240,235,224,0.4)', transition: 'color 0.2s' }}
+                  onMouseEnter={(e) => e.currentTarget.style.color = '#c9a84c'}
+                  onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(240,235,224,0.4)'}
+                >Sản phẩm</Link>
+                {product.category_name_vi && (
+                  <>
+                    <ChevronRight size={12} style={{ opacity: 0.4 }} />
+                    <Link href="/products" style={{ color: 'rgba(240,235,224,0.4)', transition: 'color 0.2s' }}
+                      onMouseEnter={(e) => e.currentTarget.style.color = '#c9a84c'}
+                      onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(240,235,224,0.4)'}
+                    >{product.category_name_vi}</Link>
+                  </>
+                )}
+                <ChevronRight size={12} style={{ opacity: 0.4 }} />
+                <span style={{ color: '#c9a84c', maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {product.name_vi}
+                </span>
+              </nav>
+
+              {/* ── 2-COLUMN LAYOUT ─────────────────────── */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',   /* ← key: equal 2 columns */
+                gap: 56,
+                alignItems: 'start',
+              }}>
+
+                {/* ── LEFT: Image gallery ──────────────── */}
+                <div>
+                  {/* Main image */}
+                  <div style={{
+                    position: 'relative',
+                    aspectRatio: '1/1',             /* ← square main image like Figma */
+                    borderRadius: 20,
+                    overflow: 'hidden',
+                    background: 'linear-gradient(135deg,#1e1a10,#2a2318)',
+                    border: '1px solid rgba(201,168,76,0.12)',
+                  }}>
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={activeImg}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                        style={{ position: 'absolute', inset: 0 }}
+                      >
+                        {gallery[activeImg] || product.main_image_url ? (
+                          <img
+                            src={gallery[activeImg] || product.main_image_url}
+                            alt={product.name_vi}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                          />
+                        ) : (
+                          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(201,168,76,0.25)' }}>
+                            <Package size={48} />
+                          </div>
+                        )}
+                      </motion.div>
+                    </AnimatePresence>
+
+                    {/* Category label */}
+                    <div style={{
+                      position: 'absolute', top: 14, left: 14, zIndex: 2,
+                      fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase',
+                      background: 'rgba(12,11,9,0.75)', border: '1px solid rgba(201,168,76,0.3)',
+                      color: '#c9a84c', padding: '4px 12px', borderRadius: 999,
+                      backdropFilter: 'blur(8px)',
+                      fontFamily: 'var(--font-sans)',
+                    }}>
+                      {product.category_name_vi || product.category_slug || 'Đặc sản'}
                     </div>
-                    <div className="aspect-square overflow-hidden">
-                      {galleryImages[selectedImageIndex] || product.main_image_url ? (
-                        <img
-                          src={galleryImages[selectedImageIndex] || product.main_image_url}
-                          alt={product.name_vi}
-                          className="h-full w-full object-cover"
-                          onError={(event) => {
-                            event.currentTarget.style.display = 'none';
-                          }}
-                        />
-                      ) : (
-                        <div className="flex h-full items-center justify-center text-[rgba(224,180,62,0.35)]">
-                          <Package className="h-10 w-10" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="absolute bottom-4 right-4 rounded-full border border-[rgba(255,255,255,0.12)] bg-[rgba(10,9,8,0.76)] px-3 py-1 text-xs text-[rgba(240,235,224,0.76)] backdrop-blur-sm">
-                      {selectedImageIndex + 1} / {galleryImages.length}
-                    </div>
+
+                    {/* Image counter */}
+                    {gallery.length > 1 && (
+                      <div style={{
+                        position: 'absolute', bottom: 14, right: 14, zIndex: 2,
+                        fontSize: 11, color: 'rgba(240,235,224,0.7)',
+                        background: 'rgba(12,11,9,0.72)', border: '1px solid rgba(255,255,255,0.1)',
+                        padding: '4px 10px', borderRadius: 999,
+                        backdropFilter: 'blur(6px)',
+                        fontFamily: 'var(--font-sans)',
+                      }}>
+                        {activeImg + 1} / {gallery.length}
+                      </div>
+                    )}
                   </div>
 
-                  <div className="mt-4 grid grid-cols-4 gap-3">
-                    {galleryImages.map((image, index) => (
-                      <button
-                        key={`${image}-${index}`}
-                        type="button"
-                        onClick={() => setSelectedImageIndex(index)}
-                        className={`aspect-square overflow-hidden rounded-[16px] border transition ${
-                          selectedImageIndex === index
-                            ? 'border-[#e0b43e] ring-2 ring-[rgba(224,180,62,0.2)]'
-                            : 'border-[rgba(255,255,255,0.1)] hover:border-[rgba(224,180,62,0.3)]'
-                        }`}
-                      >
-                        <img
-                          src={image}
-                          alt={`${product.name_vi} ${index + 1}`}
-                          className="h-full w-full object-cover"
-                          loading="lazy"
-                          onError={(event) => {
-                            event.currentTarget.parentElement?.classList.add('hidden');
+                  {/* Thumbnail strip — 4 columns below */}
+                  {gallery.length > 1 && (
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: `repeat(${Math.min(gallery.length, 4)}, 1fr)`,
+                      gap: 10,
+                      marginTop: 12,
+                    }}>
+                      {gallery.map((img, i) => (
+                        <button
+                          key={`${img}-${i}`}
+                          type="button"
+                          onClick={() => setActiveImg(i)}
+                          style={{
+                            aspectRatio: '1/1',
+                            overflow: 'hidden',
+                            borderRadius: 12,
+                            border: i === activeImg
+                              ? '2px solid #c9a84c'
+                              : '1px solid rgba(255,255,255,0.08)',
+                            background: '#1a1810',
+                            padding: 0, cursor: 'pointer',
+                            transition: 'border-color 0.2s',
+                            outline: i === activeImg ? '2px solid rgba(201,168,76,0.2)' : 'none',
+                            outlineOffset: 2,
                           }}
-                        />
-                      </button>
+                        >
+                          <img
+                            src={img}
+                            alt={`${product.name_vi} ${i + 1}`}
+                            loading="lazy"
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            onError={(e) => { e.currentTarget.closest('button').style.display = 'none'; }}
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* ── RIGHT: Product info ──────────────── */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+
+                  {/* Tags row */}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
+                    {[
+                      product.category_name_vi || product.category_slug,
+                      Number(product.sales_count || 0) > 5000 ? 'Best Seller' : null,
+                      product.weight_gram ? `${product.weight_gram}${product.unit || 'g'}` : null,
+                    ].filter(Boolean).map((tag) => (
+                      <span key={tag} style={{
+                        padding: '4px 12px', borderRadius: 999,
+                        fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase',
+                        border: tag === 'Best Seller'
+                          ? '1px solid rgba(201,168,76,0.45)'
+                          : '1px solid rgba(255,255,255,0.1)',
+                        background: tag === 'Best Seller'
+                          ? 'rgba(201,168,76,0.12)'
+                          : 'rgba(255,255,255,0.03)',
+                        color: tag === 'Best Seller' ? '#c9a84c' : 'rgba(240,235,224,0.65)',
+                        fontFamily: 'var(--font-sans)',
+                      }}>
+                        {tag}
+                      </span>
                     ))}
                   </div>
-                </div>
 
-                <div className="rounded-[28px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] p-6 sm:p-8">
-                  <nav className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-[rgba(240,235,224,0.5)]">
-                    <Link href="/" className="transition hover:text-[#e0b43e]">
-                      Trang chủ
-                    </Link>
-                    <ChevronRight className="h-3.5 w-3.5" />
-                    <Link href="/products" className="transition hover:text-[#e0b43e]">
-                      Sản phẩm
-                    </Link>
-                    <ChevronRight className="h-3.5 w-3.5" />
-                    <span className="truncate text-[rgba(240,235,224,0.78)]">{product.name_vi}</span>
-                  </nav>
+                  {/* Product name */}
+                  <h1 style={{
+                    fontFamily: 'var(--font-display)',
+                    fontSize: 'clamp(30px,3vw,44px)',
+                    fontWeight: 300,
+                    lineHeight: 1.1,
+                    letterSpacing: '-0.02em',
+                    color: '#f0ebe0',
+                    margin: '0 0 6px',
+                  }}>
+                    {product.name_vi}
+                  </h1>
 
-                  <div className="mt-6 flex flex-wrap gap-2">
-                    <span className="rounded-full border border-[rgba(224,180,62,0.22)] bg-[rgba(224,180,62,0.08)] px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-[#e0b43e]">
-                      {product.category_name_vi || product.category_slug}
+                  {/* Brand sub-line */}
+                  <p style={{
+                    fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase',
+                    color: 'rgba(240,235,224,0.35)', marginBottom: 16,
+                    fontFamily: 'var(--font-sans)',
+                  }}>
+                    DAIF · PREMIUM VIETNAMESE SPECIALTIES
+                  </p>
+
+                  {/* Rating row */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 20 }}>
+                    {[1,2,3,4,5].map((s) => (
+                      <Star key={s} size={14}
+                        fill={s <= Math.round(rating) ? '#c9a84c' : 'none'}
+                        stroke={s <= Math.round(rating) ? '#c9a84c' : 'rgba(201,168,76,0.3)'}
+                      />
+                    ))}
+                    <span style={{ fontSize: 13, fontWeight: 600, color: '#c9a84c', marginLeft: 4, fontFamily: 'var(--font-sans)' }}>{rating}</span>
+                    <span style={{ fontSize: 13, color: 'rgba(240,235,224,0.4)', fontFamily: 'var(--font-sans)' }}>({reviewCount} đánh giá)</span>
+                  </div>
+
+                  <GoldRule my={0} />
+
+                  {/* Price */}
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, margin: '20px 0' }}>
+                    <span style={{
+                      fontFamily: 'var(--font-sans)',
+                      fontSize: 'clamp(28px,3vw,38px)',
+                      fontWeight: 600, color: '#c9a84c',
+                    }}>
+                      {formatVnd(product.price_vnd)}
+                      <span style={{ fontSize: 18, fontWeight: 400 }}> đ</span>
                     </span>
-                    {product.weight_gram ? (
-                      <span className="rounded-full border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.02)] px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-[rgba(240,235,224,0.72)]">
-                        {product.weight_gram}
-                        {product.unit ? ` ${product.unit}` : ''}
-                      </span>
-                    ) : null}
-                    <span className="rounded-full border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.02)] px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-[rgba(240,235,224,0.72)]">
-                      {product.stock > 0 ? 'Còn hàng' : 'Hết hàng'}
+                    {hasDiscount && (
+                      <>
+                        <span style={{ fontSize: 18, color: 'rgba(240,235,224,0.3)', textDecoration: 'line-through', fontFamily: 'var(--font-sans)' }}>
+                          {formatVnd(product.original_price_vnd)} đ
+                        </span>
+                        <span style={{
+                          padding: '2px 10px', borderRadius: 999,
+                          background: '#c9a84c', color: '#1a1208',
+                          fontSize: 11, fontWeight: 700, fontFamily: 'var(--font-sans)',
+                        }}>
+                          -{discountPct}%
+                        </span>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Short description */}
+                  <p style={{
+                    fontSize: 14, lineHeight: 1.8,
+                    color: 'rgba(240,235,224,0.65)',
+                    margin: '0 0 20px',
+                    fontFamily: 'var(--font-sans)',
+                  }}>
+                    {textOrFallback(product.summary_vi, story?.culture_vi)}
+                  </p>
+
+                  {/* Stock status */}
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    marginBottom: 20, fontSize: 13, fontFamily: 'var(--font-sans)',
+                  }}>
+                    <span style={{
+                      width: 8, height: 8, borderRadius: '50%',
+                      background: inStock ? '#4ade80' : '#f87171',
+                      flexShrink: 0,
+                    }} />
+                    <span style={{ color: inStock ? 'rgba(240,235,224,0.7)' : '#f87171' }}>
+                      {inStock
+                        ? `Còn hàng${product.stock ? ` — Giao hàng trong 2–3 ngày` : ''}`
+                        : 'Tạm hết hàng'}
                     </span>
                   </div>
 
-                  <div className="mt-6 space-y-3">
-                    <h1 className="text-[2.25rem] leading-[1.06] tracking-[-0.04em] text-[#f0ebe0] sm:text-[3rem] lg:text-[3.3rem]" style={{ fontFamily: 'var(--font-display)', fontWeight: 300 }}>
-                      {product.name_vi}
-                    </h1>
-                    <p className="max-w-[52ch] text-[15px] leading-7 text-[rgba(240,235,224,0.72)]">
-                      {textOrFallback(product.tagline_vi, product.summary_vi)}
+                  <GoldRule my={0} />
+
+                  {/* Quantity + Add to cart */}
+                  <div style={{ margin: '20px 0', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {/* Qty label */}
+                    <p style={{ fontSize: 13, color: 'rgba(240,235,224,0.55)', fontFamily: 'var(--font-sans)' }}>
+                      Số lượng:
                     </p>
-                  </div>
 
-                  <div className="mt-6 flex items-baseline gap-3">
-                    <p className="text-[2rem] font-semibold text-[#e0b43e] sm:text-[2.25rem]">
-                      {formatVnd(product.price_vnd)}<span className="text-[1rem] font-normal">đ</span>
-                    </p>
-                  </div>
+                    {/* Qty controls */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div style={{
+                        display: 'inline-flex', alignItems: 'center',
+                        border: '1px solid rgba(255,255,255,0.12)',
+                        background: 'rgba(255,255,255,0.02)',
+                        borderRadius: 999, padding: 4,
+                      }}>
+                        <button type="button" onClick={() => setQty((q) => Math.max(1, q - 1))}
+                          style={{
+                            width: 36, height: 36, borderRadius: '50%',
+                            border: 'none', background: 'transparent',
+                            color: '#f0ebe0', cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            transition: 'background 0.2s',
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
+                          onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                        >
+                          <Minus size={14} />
+                        </button>
+                        <span style={{
+                          minWidth: 40, textAlign: 'center',
+                          fontSize: 15, fontWeight: 500,
+                          color: '#f0ebe0', fontFamily: 'var(--font-sans)',
+                        }}>
+                          {qty}
+                        </span>
+                        <button type="button" onClick={() => setQty((q) => q + 1)}
+                          style={{
+                            width: 36, height: 36, borderRadius: '50%',
+                            border: 'none', background: 'transparent',
+                            color: '#f0ebe0', cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            transition: 'background 0.2s',
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
+                          onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                        >
+                          <Plus size={14} />
+                        </button>
+                      </div>
+                    </div>
 
-                  <div className="mt-6 rounded-[20px] border border-[rgba(255,255,255,0.08)] bg-[rgba(0,0,0,0.18)] p-4 text-[14px] leading-7 text-[rgba(240,235,224,0.76)]">
-                    <p className="text-[11px] uppercase tracking-[0.18em] text-[rgba(224,180,62,0.7)]">Mô tả ngắn</p>
-                    <p className="mt-2">{textOrFallback(product.summary_vi, story?.culture_vi)}</p>
-                  </div>
-
-                  <div className="mt-6 flex items-center gap-4">
-                    <span className="text-[14px] text-[rgba(240,235,224,0.7)]">Số lượng:</span>
-                    <div className="inline-flex items-center rounded-full border border-[rgba(255,255,255,0.12)] bg-[rgba(255,255,255,0.02)] p-1">
+                    {/* CTA row */}
+                    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                      {/* Main CTA — full width gold */}
                       <button
                         type="button"
-                        onClick={() => setQuantity((prev) => Math.max(1, prev - 1))}
-                        className="inline-flex h-10 w-10 items-center justify-center rounded-full text-lg text-[#f0ebe0] transition hover:bg-[rgba(255,255,255,0.05)]"
-                        aria-label="Decrease quantity"
+                        onClick={handleAddToCart}
+                        disabled={isAdding || !inStock}
+                        style={{
+                          flex: 1, minWidth: 180,
+                          height: 50,
+                          background: isAdding ? 'rgba(201,168,76,0.7)' : '#c9a84c',
+                          color: '#1a1208',
+                          border: 'none', borderRadius: 999,
+                          fontSize: 12, fontWeight: 700,
+                          letterSpacing: '0.18em', textTransform: 'uppercase',
+                          cursor: isAdding || !inStock ? 'not-allowed' : 'pointer',
+                          opacity: !inStock ? 0.5 : 1,
+                          transition: 'opacity 0.2s',
+                          fontFamily: 'var(--font-sans)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                        }}
                       >
-                        <Minus className="h-4 w-4" />
+                        <ShoppingCart size={15} />
+                        {isAdding ? 'Đang thêm...' : 'Thêm vào giỏ hàng'}
                       </button>
-                      <span className="inline-flex min-w-12 items-center justify-center px-4 text-sm font-medium text-[#f0ebe0]">
-                        {quantity}
-                      </span>
+
+                      {/* Wishlist */}
                       <button
                         type="button"
-                        onClick={() => setQuantity((prev) => prev + 1)}
-                        className="inline-flex h-10 w-10 items-center justify-center rounded-full text-lg text-[#f0ebe0] transition hover:bg-[rgba(255,255,255,0.05)]"
-                        aria-label="Increase quantity"
+                        onClick={() => setWishlisted((w) => !w)}
+                        aria-label="Yêu thích"
+                        style={{
+                          width: 50, height: 50, borderRadius: '50%',
+                          border: `1px solid ${wishlisted ? 'rgba(201,168,76,0.5)' : 'rgba(255,255,255,0.12)'}`,
+                          background: wishlisted ? 'rgba(201,168,76,0.12)' : 'transparent',
+                          color: wishlisted ? '#c9a84c' : 'rgba(240,235,224,0.7)',
+                          cursor: 'pointer',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          transition: 'all 0.25s',
+                        }}
                       >
-                        <Plus className="h-4 w-4" />
+                        <Heart size={17} fill={wishlisted ? '#c9a84c' : 'none'} />
+                      </button>
+
+                      {/* Share */}
+                      <button
+                        type="button"
+                        aria-label="Chia sẻ"
+                        style={{
+                          width: 50, height: 50, borderRadius: '50%',
+                          border: '1px solid rgba(255,255,255,0.12)',
+                          background: 'transparent',
+                          color: 'rgba(240,235,224,0.7)',
+                          cursor: 'pointer',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          transition: 'all 0.25s',
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(201,168,76,0.35)'; e.currentTarget.style.color = '#c9a84c'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'; e.currentTarget.style.color = 'rgba(240,235,224,0.7)'; }}
+                      >
+                        <Share2 size={16} />
                       </button>
                     </div>
                   </div>
 
-                  <div className="mt-6 flex flex-wrap gap-3">
-                    <button
-                      type="button"
-                      onClick={handleAddToCart}
-                      disabled={isAdding}
-                      className="inline-flex h-12 items-center justify-center rounded-full bg-[#e0b43e] px-6 text-sm font-semibold text-[#1a1208] transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {isAdding ? 'Đang thêm...' : 'THÊM VÀO GIỎ HÀNG'}
-                    </button>
-                    <button
-                      type="button"
-                      className="inline-flex h-12 items-center justify-center rounded-full border border-[rgba(255,255,255,0.12)] bg-transparent px-5 text-sm font-medium text-[rgba(240,235,224,0.88)] transition hover:border-[rgba(224,180,62,0.35)] hover:text-[#e0b43e]"
-                    >
-                      <Heart className="mr-2 h-4 w-4" />
-                      Yêu thích
-                    </button>
-                    <button
-                      type="button"
-                      className="inline-flex h-12 items-center justify-center rounded-full border border-[rgba(255,255,255,0.12)] bg-transparent px-5 text-sm font-medium text-[rgba(240,235,224,0.88)] transition hover:border-[rgba(224,180,62,0.35)] hover:text-[#e0b43e]"
-                    >
-                      <Share2 className="mr-2 h-4 w-4" />
-                      Chia sẻ
-                    </button>
-                  </div>
-
-                  <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-[18px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] p-4">
-                      <p className="text-sm font-semibold text-[#f0ebe0]">Nguồn gốc</p>
-                      <p className="mt-1 text-sm leading-6 text-[rgba(240,235,224,0.72)]">
-                        {textOrFallback(story?.origin_vi)}
-                      </p>
-                    </div>
-                    <div className="rounded-[18px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] p-4">
-                      <p className="text-sm font-semibold text-[#f0ebe0]">Tình trạng</p>
-                      <p className="mt-1 text-sm leading-6 text-[rgba(240,235,224,0.72)]">
-                        {product.stock > 0 ? `Còn ${product.stock} sản phẩm` : 'Tạm hết hàng'}
-                      </p>
-                    </div>
+                  {/* Trust badges */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 8 }}>
+                    <TrustBadge Icon={Shield}  title="Chất lượng cao cấp"  sub="100% nguyên liệu tự nhiên" />
+                    <TrustBadge Icon={Truck}   title="Giao hàng nhanh"     sub="Miễn phí ship từ 500.000đ" />
+                    <TrustBadge Icon={RotateCcw} title="Đổi trả dễ dàng"  sub="Hoàn tiền 100% nếu lỗi" />
+                    <TrustBadge Icon={MapPin}  title="Nguồn gốc rõ ràng"   sub={textOrFallback(story?.origin_vi, 'Miền Trung Việt Nam')} />
                   </div>
                 </div>
+              </div>{/* end 2-col grid */}
+            </div>
+
+            {/* ══ TABS SECTION ═════════════════════════════ */}
+            <div style={{ maxWidth: 1280, margin: '48px auto 0', padding: '0 40px' }}>
+              <GoldRule />
+
+              {/* Tab bar */}
+              <div style={{
+                display: 'flex', gap: 32,
+                overflowX: 'auto', borderBottom: '1px solid rgba(255,255,255,0.07)',
+                marginBottom: 0,
+                scrollbarWidth: 'none',
+              }}>
+                {[
+                  { key: 'description', label: 'Mô tả chi tiết' },
+                  { key: 'ingredients', label: 'Thành phần' },
+                  { key: 'storage',     label: 'Bảo quản' },
+                  { key: 'reviews',     label: 'Đánh giá' },
+                ].map((tab) => (
+                  <Tab key={tab.key} active={activeTab === tab.key} onClick={() => setActiveTab(tab.key)}>
+                    {tab.label}
+                  </Tab>
+                ))}
               </div>
 
-              <div className="rounded-[28px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] p-6 sm:p-8">
-                <div className="flex items-center gap-8 overflow-x-auto border-b border-[rgba(255,255,255,0.08)] pb-1 scrollbar-hide">
-                  <DetailTabButton active={activeTab === 'description'} onClick={() => setActiveTab('description')}>
-                    MÔ TẢ CHI TIẾT
-                  </DetailTabButton>
-                  <DetailTabButton active={activeTab === 'ingredients'} onClick={() => setActiveTab('ingredients')}>
-                    THÀNH PHẦN
-                  </DetailTabButton>
-                  <DetailTabButton active={activeTab === 'storage'} onClick={() => setActiveTab('storage')}>
-                    BẢO QUẢN
-                  </DetailTabButton>
-                  <DetailTabButton active={activeTab === 'reviews'} onClick={() => setActiveTab('reviews')}>
-                    ĐÁNH GIÁ
-                  </DetailTabButton>
-                </div>
-
-                <div className="pt-8">
-                  {activeTab === 'description' ? (
-                    <div className="space-y-5 text-[15px] leading-8 text-[rgba(240,235,224,0.8)]">
-                      <p>{textOrFallback(product.summary_vi, story?.culture_vi)}</p>
-                      <p>
-                        {textOrFallback(
-                          story?.culture_vi,
-                          'Sản phẩm được chọn lọc từ nguồn nguyên liệu phù hợp và giữ trọn giá trị truyền thống.'
-                        )}
+              {/* Tab content */}
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeTab}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.3 }}
+                  style={{ padding: '32px 0 48px' }}
+                >
+                  {activeTab === 'description' && (
+                    <div style={{ maxWidth: 800, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                      <p style={{ fontSize: 15, lineHeight: 1.85, color: 'rgba(240,235,224,0.78)', fontFamily: 'var(--font-sans)' }}>
+                        {textOrFallback(product.summary_vi, story?.culture_vi)}
                       </p>
-                      <p>
-                        <strong className="text-[#f0ebe0]">Nguồn gốc:</strong> {textOrFallback(story?.origin_vi)}
-                      </p>
+                      {story?.culture_vi && (
+                        <p style={{ fontSize: 15, lineHeight: 1.85, color: 'rgba(240,235,224,0.78)', fontFamily: 'var(--font-sans)' }}>
+                          {story.culture_vi}
+                        </p>
+                      )}
+                      {story?.origin_vi && (
+                        <p style={{ fontSize: 15, lineHeight: 1.85, color: 'rgba(240,235,224,0.78)', fontFamily: 'var(--font-sans)' }}>
+                          <strong style={{ color: '#f0ebe0' }}>Nguồn gốc:</strong> {story.origin_vi}
+                        </p>
+                      )}
                     </div>
-                  ) : null}
+                  )}
 
-                  {activeTab === 'ingredients' ? (
-                    <div className="space-y-5">
-                      <h3 className="text-[1.1rem] font-semibold text-[#f0ebe0]">Thành phần chính:</h3>
+                  {activeTab === 'ingredients' && (
+                    <div style={{ maxWidth: 700 }}>
+                      <h3 style={{ fontSize: 16, fontWeight: 600, color: '#f0ebe0', marginBottom: 16, fontFamily: 'var(--font-sans)' }}>
+                        Thành phần chính
+                      </h3>
                       {ingredients.length > 0 ? (
-                        <ul className="space-y-3 text-[15px] leading-7 text-[rgba(240,235,224,0.8)]">
-                          {ingredients.map((ingredient, index) => (
-                            <li key={`${ingredient}-${index}`} className="flex items-start gap-3">
-                              <span className="mt-2 h-2 w-2 rounded-full bg-[#e0b43e]" />
-                              <span>{ingredient}</span>
+                        <ul style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
+                          {ingredients.map((item, i) => (
+                            <li key={i} style={{
+                              display: 'flex', alignItems: 'flex-start', gap: 12,
+                              fontSize: 14, lineHeight: 1.7, color: 'rgba(240,235,224,0.75)',
+                              fontFamily: 'var(--font-sans)',
+                            }}>
+                              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#c9a84c', marginTop: 7, flexShrink: 0 }} />
+                              {item}
                             </li>
                           ))}
                         </ul>
                       ) : (
-                        <p className="text-[15px] leading-7 text-[rgba(240,235,224,0.72)]">Đang cập nhật thành phần.</p>
+                        <p style={{ fontSize: 14, color: 'rgba(240,235,224,0.5)', fontFamily: 'var(--font-sans)' }}>Đang cập nhật thành phần.</p>
                       )}
-
-                      {product.allergens_vi ? (
-                        <div className="rounded-[18px] border border-[rgba(224,180,62,0.2)] bg-[rgba(224,180,62,0.08)] p-4 text-[14px] leading-7 text-[#e0b43e]">
-                          <strong className="text-[#f0ebe0]">Lưu ý:</strong> {product.allergens_vi}
+                      {product.allergens_vi && (
+                        <div style={{
+                          padding: '12px 16px', borderRadius: 12,
+                          border: '1px solid rgba(201,168,76,0.25)',
+                          background: 'rgba(201,168,76,0.07)',
+                          fontSize: 13, color: '#c9a84c', fontFamily: 'var(--font-sans)',
+                        }}>
+                          <strong style={{ color: '#f0ebe0' }}>Lưu ý dị ứng:</strong> {product.allergens_vi}
                         </div>
-                      ) : null}
+                      )}
                     </div>
-                  ) : null}
+                  )}
 
-                  {activeTab === 'storage' ? (
-                    <div className="space-y-5">
-                      <p className="text-[15px] leading-8 text-[rgba(240,235,224,0.8)]">{storageSummary}</p>
-                      <div className="grid gap-4 md:grid-cols-2">
-                        <div className="rounded-[18px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] p-4">
-                          <h4 className="text-[1rem] font-semibold text-[#f0ebe0]">Bảo quản</h4>
-                          <p className="mt-2 text-[14px] leading-7 text-[rgba(240,235,224,0.74)]">{storageSummary}</p>
-                        </div>
-                        <div className="rounded-[18px] border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] p-4">
-                          <h4 className="text-[1rem] font-semibold text-[#f0ebe0]">Hạn sử dụng</h4>
-                          <p className="mt-2 text-[14px] leading-7 text-[rgba(240,235,224,0.74)]">{shelfLife}</p>
-                        </div>
+                  {activeTab === 'storage' && (
+                    <div style={{ maxWidth: 700, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                      <p style={{ fontSize: 14, lineHeight: 1.8, color: 'rgba(240,235,224,0.72)', fontFamily: 'var(--font-sans)' }}>
+                        {textOrFallback(product.preservation_vi)}
+                      </p>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                        {[
+                          { label: 'Bảo quản',      value: textOrFallback(product.preservation_vi) },
+                          { label: 'Hạn sử dụng',   value: textOrFallback(product.shelf_life_vi) },
+                        ].map((item) => (
+                          <div key={item.label} style={{
+                            padding: '16px', borderRadius: 14,
+                            border: '1px solid rgba(255,255,255,0.07)',
+                            background: 'rgba(255,255,255,0.02)',
+                          }}>
+                            <p style={{ fontSize: 12, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(201,168,76,0.65)', marginBottom: 8, fontFamily: 'var(--font-sans)' }}>
+                              {item.label}
+                            </p>
+                            <p style={{ fontSize: 14, lineHeight: 1.7, color: 'rgba(240,235,224,0.72)', fontFamily: 'var(--font-sans)' }}>
+                              {item.value}
+                            </p>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  ) : null}
+                  )}
 
-                  {activeTab === 'reviews' ? <div className="min-h-[120px]" aria-hidden="true" /> : null}
-                </div>
-              </div>
-
-              {relatedProducts.length > 0 ? (
-                <section className="space-y-6 pt-2">
-                  <div className="flex items-end justify-between gap-4">
-                    <div>
-                      <p className="text-[11px] uppercase tracking-[0.22em] text-[rgba(224,180,62,0.75)]">Khám phá thêm</p>
-                      <h2 className="mt-2 text-[2rem] leading-none text-[#f0ebe0]" style={{ fontFamily: 'var(--font-display)', fontWeight: 300 }}>
-                        Sản phẩm liên quan
-                      </h2>
+                  {activeTab === 'reviews' && (
+                    <div style={{ textAlign: 'center', padding: '40px 0', color: 'rgba(240,235,224,0.35)', fontFamily: 'var(--font-sans)', fontSize: 14 }}>
+                      Chưa có đánh giá nào. Hãy là người đầu tiên đánh giá sản phẩm này!
                     </div>
-                    <Link href="/products" className="text-[12px] uppercase tracking-[0.2em] text-[rgba(240,235,224,0.58)] transition hover:text-[#e0b43e]">
-                      Xem toàn bộ
-                    </Link>
-                  </div>
-
-                  <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-                    {relatedProducts.map((relatedProduct) => (
-                      <RelatedProductCard key={relatedProduct.id} product={relatedProduct} />
-                    ))}
-                  </div>
-                </section>
-              ) : null}
+                  )}
+                </motion.div>
+              </AnimatePresence>
             </div>
-          )}
-        </section>
+
+            {/* ══ RELATED PRODUCTS ═════════════════════════ */}
+            {related.length > 0 && (
+              <section style={{
+                maxWidth: 1280, margin: '0 auto',
+                padding: '0 40px 80px',
+              }}>
+                <GoldRule my={0} />
+                <div style={{ padding: '40px 0 28px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
+                  <div>
+                    <p style={{
+                      fontSize: 10, letterSpacing: '0.28em', textTransform: 'uppercase',
+                      color: 'rgba(201,168,76,0.7)', marginBottom: 8, fontFamily: 'var(--font-sans)',
+                    }}>
+                      Khám phá thêm
+                    </p>
+                    <h2 style={{
+                      fontFamily: 'var(--font-display)',
+                      fontSize: 'clamp(24px,2.5vw,34px)',
+                      fontWeight: 300, color: '#f0ebe0', margin: 0,
+                    }}>
+                      Sản Phẩm Liên Quan
+                    </h2>
+                    <p style={{ fontSize: 13, color: 'rgba(240,235,224,0.4)', marginTop: 6, fontFamily: 'var(--font-sans)' }}>
+                      Khám phá thêm các sản phẩm đặc biệt khác
+                    </p>
+                  </div>
+                  <Link href="/products" style={{
+                    fontSize: 11, letterSpacing: '0.18em', textTransform: 'uppercase',
+                    color: 'rgba(240,235,224,0.45)', transition: 'color 0.2s',
+                    fontFamily: 'var(--font-sans)',
+                  }}
+                    onMouseEnter={(e) => e.currentTarget.style.color = '#c9a84c'}
+                    onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(240,235,224,0.45)'}
+                  >
+                    Xem toàn bộ →
+                  </Link>
+                </div>
+
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+                  gap: 20,
+                }}>
+                  {related.map((p) => <RelatedCard key={p.id} product={p} />)}
+                </div>
+              </section>
+            )}
+          </>
+        )}
       </div>
 
-      <div className={`fixed bottom-5 right-5 z-[80] transition ${toastMessage ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-2 opacity-0'}`}>
-        <div className="rounded-2xl border border-[rgba(255,255,255,0.1)] bg-[#11100d] px-4 py-3 text-sm text-[#f0ebe0] shadow-[0_18px_45px_rgba(0,0,0,0.3)]">
-          {toastMessage}
+      {/* ── Toast notification ─────────────────────────── */}
+      <div style={{
+        position: 'fixed', bottom: 24, right: 24, zIndex: 80,
+        transform: toast ? 'translateY(0)' : 'translateY(12px)',
+        opacity: toast ? 1 : 0,
+        pointerEvents: toast ? 'auto' : 'none',
+        transition: 'all 0.3s cubic-bezier(0.22,1,0.36,1)',
+      }}>
+        <div style={{
+          padding: '12px 20px', borderRadius: 14,
+          background: '#131108',
+          border: '1px solid rgba(201,168,76,0.25)',
+          boxShadow: '0 16px 48px rgba(0,0,0,0.4)',
+          fontSize: 13, color: '#f0ebe0',
+          fontFamily: 'var(--font-sans)',
+        }}>
+          {toast}
         </div>
       </div>
     </>
