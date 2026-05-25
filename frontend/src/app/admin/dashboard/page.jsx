@@ -1,216 +1,466 @@
 'use client';
 
+/**
+ * app/admin/dashboard/page.jsx
+ *
+ * Dashboard chính của admin:
+ *   - 4 metric cards (doanh thu, đơn hàng, sản phẩm, khách hàng)
+ *   - Mini inventory bar chart (tồn kho theo danh mục)
+ *   - Bảng đơn hàng gần đây
+ *   - Quick-link sang các trang quản lý
+ *
+ * Dữ liệu: GET /api/dashboard → { total_revenue_vnd, total_orders,
+ *   total_products, total_customers, recent_orders[], category_stocks[] }
+ */
+
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { BarChart3, Package, ShoppingCart, Users } from 'lucide-react';
+import {
+  BarChart2,
+  Package,
+  ShoppingCart,
+  Users,
+  ArrowRight,
+  TrendingUp,
+  AlertTriangle,
+} from 'lucide-react';
 import api from '../../../lib/api';
 
-function formatVnd(value) {
-  return Number(value || 0).toLocaleString('vi-VN');
+/* ─────────────────────────────────────────────
+   HELPERS
+───────────────────────────────────────────── */
+function fmtVnd(v) {
+  return Number(v || 0).toLocaleString('vi-VN');
 }
 
-function formatDate(value) {
-  if (!value) {
-    return '--';
-  }
-
-  return new Date(value).toLocaleString('vi-VN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
+function fmtDate(v) {
+  if (!v) return '--';
+  return new Date(v).toLocaleString('vi-VN', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
   });
 }
 
-function normalizeStatus(status) {
-  return String(status || '').trim().toLowerCase();
+function normalizeStatus(s) {
+  return String(s || '').trim().toLowerCase();
 }
 
-function getStatusBadgeClass(status) {
-  const normalized = normalizeStatus(status);
-
-  if (normalized === 'processing') {
-    return 'border-sky-500/20 bg-sky-500/10 text-sky-200';
-  }
-
-  if (normalized === 'shipped') {
-    return 'border-indigo-500/20 bg-indigo-500/10 text-indigo-200';
-  }
-
-  if (normalized === 'delivered' || normalized === 'completed') {
-    return 'border-emerald-500/20 bg-emerald-500/10 text-emerald-200';
-  }
-
-  if (normalized === 'cancelled') {
-    return 'border-rose-500/20 bg-rose-500/10 text-rose-200';
-  }
-
-  return 'border-amber-500/20 bg-amber-500/10 text-amber-200';
+const STATUS_STYLES = {
+  pending:    'border-[rgba(250,204,21,0.25)]   bg-[rgba(250,204,21,0.07)]   text-[rgba(253,224,71,0.85)]',
+  processing: 'border-[rgba(147,197,253,0.25)]  bg-[rgba(147,197,253,0.07)]  text-[rgba(147,197,253,0.85)]',
+  shipped:    'border-[rgba(167,139,250,0.25)]  bg-[rgba(167,139,250,0.07)]  text-[rgba(196,181,253,0.85)]',
+  delivered:  'border-[rgba(134,239,172,0.25)]  bg-[rgba(134,239,172,0.07)]  text-[rgba(134,239,172,0.85)]',
+  completed:  'border-[rgba(134,239,172,0.25)]  bg-[rgba(134,239,172,0.07)]  text-[rgba(134,239,172,0.85)]',
+  cancelled:  'border-[rgba(248,113,113,0.25)]  bg-[rgba(248,113,113,0.07)]  text-[rgba(248,113,113,0.85)]',
+};
+function statusStyle(s) {
+  return STATUS_STYLES[normalizeStatus(s)] ?? STATUS_STYLES.pending;
 }
 
-function MetricCard({ title, value, description, icon: Icon }) {
+/* ─────────────────────────────────────────────
+   METRIC CARD
+───────────────────────────────────────────── */
+function MetricCard({ title, value, description, icon: Icon, trend, trendLabel, accent = false }) {
   return (
-    <article className="rounded-[28px] border border-[rgba(201,168,76,0.14)] bg-[linear-gradient(135deg,#16130e,#11100d)] p-6 shadow-[0_18px_50px_rgba(0,0,0,0.18)]">
+    <article
+      className={
+        'relative overflow-hidden rounded-[20px] border p-[20px] ' +
+        'bg-[linear-gradient(145deg,#16130e,#11100d)] ' +
+        (accent
+          ? 'border-[rgba(201,168,76,0.3)]'
+          : 'border-[rgba(201,168,76,0.12)]')
+      }
+    >
+      {/* Soft glow top-right */}
+      <div className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full bg-[rgba(201,168,76,0.06)]" />
+
       <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-[10px] uppercase tracking-[0.28em] text-[rgba(240,235,224,0.38)]">{title}</p>
-          <h3 className="mt-3 text-[2rem] leading-none tracking-[-0.04em] text-[#f0ebe0]" style={{ fontFamily: 'var(--font-display)', fontWeight: 300 }}>
+        <div className="flex-1 min-w-0">
+          <p className="text-[9px] uppercase tracking-[0.26em] text-[rgba(240,235,224,0.36)]">
+            {title}
+          </p>
+          <p
+            className="mt-[10px] text-[1.9rem] leading-none tracking-[-0.03em] text-[var(--ink)]"
+            style={{ fontFamily: 'var(--font-display)', fontWeight: 300 }}
+          >
             {value}
-          </h3>
-          <p className="mt-3 text-[13px] leading-6 text-[rgba(240,235,224,0.54)]">{description}</p>
+          </p>
+          <p className="mt-[8px] text-[12px] leading-[1.5] text-[rgba(240,235,224,0.42)]">
+            {description}
+          </p>
+          {trend != null && (
+            <span
+              className={
+                'mt-[10px] inline-flex items-center gap-[4px] rounded-full border px-[8px] py-[2px] text-[10px] ' +
+                (trend >= 0
+                  ? 'border-[rgba(134,239,172,0.25)] bg-[rgba(134,239,172,0.06)] text-[rgba(134,239,172,0.8)]'
+                  : 'border-[rgba(248,113,113,0.25)] bg-[rgba(248,113,113,0.06)] text-[rgba(248,113,113,0.8)]')
+              }
+            >
+              <TrendingUp size={10} strokeWidth={1.8} />
+              {trendLabel}
+            </span>
+          )}
         </div>
 
-        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-[rgba(201,168,76,0.18)] bg-[rgba(201,168,76,0.08)] text-[#c9a84c]">
-          <Icon className="h-5 w-5" />
+        {/* Icon circle */}
+        <div className="flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-full border border-[rgba(201,168,76,0.18)] bg-[rgba(201,168,76,0.07)]">
+          <Icon size={15} strokeWidth={1.5} className="text-[var(--gold)]" />
         </div>
       </div>
     </article>
   );
 }
 
+/* ─────────────────────────────────────────────
+   MINI BAR CHART — tồn kho theo danh mục
+   data: [{ label, value, max }]
+───────────────────────────────────────────── */
+function StockBarChart({ data = [] }) {
+  if (!data.length) return null;
+  const peak = Math.max(...data.map((d) => d.value), 1);
+
+  return (
+    <div className="flex h-[72px] items-end gap-[4px] px-[2px]">
+      {data.map((d, i) => {
+        const pct = Math.max(8, (d.value / peak) * 100);
+        const isLow = d.value <= 10;
+        return (
+          <div key={i} className="group relative flex flex-1 flex-col items-center gap-[4px]">
+            {/* Tooltip */}
+            <div className="pointer-events-none absolute bottom-[calc(100%+4px)] left-1/2 -translate-x-1/2 whitespace-nowrap rounded-[6px] border border-[rgba(201,168,76,0.2)] bg-[#1a1710] px-[8px] py-[4px] text-[10px] text-[rgba(240,235,224,0.7)] opacity-0 transition-opacity group-hover:opacity-100">
+              {d.label}: {d.value}
+            </div>
+            <div
+              className={
+                'w-full rounded-[3px_3px_0_0] transition-all duration-300 ' +
+                (isLow
+                  ? 'bg-[rgba(248,113,113,0.45)]'
+                  : 'bg-[rgba(201,168,76,0.35)] group-hover:bg-[rgba(201,168,76,0.6)]')
+              }
+              style={{ height: `${pct}%` }}
+            />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   SECTION HEADER — dùng trong panel
+───────────────────────────────────────────── */
+function PanelHead({ title, href, linkLabel = 'Xem tất cả' }) {
+  return (
+    <div className="flex items-center justify-between gap-4 border-b border-[rgba(201,168,76,0.12)] px-[20px] py-[14px]">
+      <h3
+        className="text-[16px] leading-none text-[var(--ink)]"
+        style={{ fontFamily: 'var(--font-display)', fontWeight: 400 }}
+      >
+        {title}
+      </h3>
+      {href && (
+        <Link
+          href={href}
+          className="flex items-center gap-[5px] text-[10px] uppercase tracking-[0.1em] text-[rgba(201,168,76,0.65)] transition-all hover:text-[var(--gold)]"
+        >
+          {linkLabel}
+          <ArrowRight size={11} strokeWidth={1.8} />
+        </Link>
+      )}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   SKELETON LOADER
+───────────────────────────────────────────── */
+function Skeleton({ h = 'h-[14px]', w = 'w-full', className = '' }) {
+  return (
+    <div
+      className={`rounded-[4px] bg-[rgba(255,255,255,0.05)] animate-pulse ${h} ${w} ${className}`}
+    />
+  );
+}
+
+/* ─────────────────────────────────────────────
+   PAGE
+───────────────────────────────────────────── */
 export default function AdminDashboardPage() {
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     total_revenue_vnd: 0,
     total_orders: 0,
     total_products: 0,
     total_customers: 0,
     recent_orders: [],
+    category_stocks: [], // [{ label, value }] — nếu API chưa trả thì để []
   });
 
   useEffect(() => {
-    let isActive = true;
-
-    async function fetchDashboardStats() {
+    let alive = true;
+    (async () => {
       try {
-        setIsLoading(true);
-        const response = await api.get('/dashboard');
-        const data = response.data?.data;
-
-        if (!isActive || !data) {
-          return;
-        }
-
+        const { data } = await api.get('/dashboard');
+        const d = data?.data;
+        if (!alive || !d) return;
         setStats({
-          total_revenue_vnd: Number(data.total_revenue_vnd || 0),
-          total_orders: Number(data.total_orders || 0),
-          total_products: Number(data.total_products || 0),
-          total_customers: Number(data.total_customers || 0),
-          recent_orders: Array.isArray(data.recent_orders) ? data.recent_orders : [],
+          total_revenue_vnd: Number(d.total_revenue_vnd || 0),
+          total_orders:       Number(d.total_orders || 0),
+          total_products:     Number(d.total_products || 0),
+          total_customers:    Number(d.total_customers || 0),
+          recent_orders:      Array.isArray(d.recent_orders) ? d.recent_orders : [],
+          category_stocks:    Array.isArray(d.category_stocks) ? d.category_stocks : [],
         });
-      } catch (error) {
-        if (isActive) {
-          setStats({
-            total_revenue_vnd: 0,
-            total_orders: 0,
-            total_products: 0,
-            total_customers: 0,
-            recent_orders: [],
-          });
-        }
-
-        console.error('Không thể tải dữ liệu dashboard:', error);
+      } catch (e) {
+        console.error('Dashboard fetch error:', e);
       } finally {
-        if (isActive) {
-          setIsLoading(false);
-        }
+        if (alive) setLoading(false);
       }
-    }
-
-    fetchDashboardStats();
-
-    return () => {
-      isActive = false;
-    };
+    })();
+    return () => { alive = false; };
   }, []);
 
-  const recentOrders = stats.recent_orders;
+  /* ── Low-stock warning ── */
+  const lowStockCount = stats.category_stocks.filter((c) => c.value <= 10).length;
 
   return (
-    <section className="space-y-6 text-white">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="max-w-3xl space-y-3">
-          <h2 className="text-[2.5rem] leading-[1.02] tracking-[-0.04em] sm:text-[3.2rem]" style={{ fontFamily: 'var(--font-display)', fontWeight: 300 }}>
-            Bảng điều khiển
-          </h2>
-          <p className="max-w-2xl text-[14px] leading-7 text-[rgba(240,235,224,0.62)]">
-            Theo dõi doanh thu, đơn hàng, sản phẩm và hoạt động gần đây trong một bố cục gọn và dễ đọc.
+    <section className="flex flex-col gap-[22px]">
+
+      {/* ── Page header ── */}
+      <div className="flex items-end justify-between gap-4">
+        <div>
+          <p className="text-[9px] uppercase tracking-[0.28em] text-[rgba(201,168,76,0.6)]">
+            Admin / Dashboard
+          </p>
+          <h1
+            className="mt-[6px] text-[2.2rem] leading-[1.05] tracking-[-0.03em] text-[var(--ink)]"
+            style={{ fontFamily: 'var(--font-display)', fontWeight: 300 }}
+          >
+            Bảng điều <em className="italic text-[var(--gold)]">khiển</em>
+          </h1>
+          <p className="mt-[5px] text-[12px] text-[rgba(240,235,224,0.38)]">
+            Theo dõi doanh thu, đơn hàng và hoạt động gần đây.
           </p>
         </div>
 
-        <Link href="/admin/products" className="inline-flex items-center justify-center rounded-full border border-[rgba(201,168,76,0.2)] bg-[rgba(255,255,255,0.03)] px-5 py-3 text-[13px] font-medium text-[rgba(240,235,224,0.82)] transition hover:border-[rgba(201,168,76,0.55)] hover:text-[#c9a84c]">
+        <Link
+          href="/admin/products"
+          className={
+            'flex items-center gap-[6px] rounded-full border border-[rgba(240,235,224,0.12)] ' +
+            'px-[16px] py-[8px] text-[11px] uppercase tracking-[0.1em] text-[rgba(240,235,224,0.6)] ' +
+            'transition-all hover:border-[rgba(201,168,76,0.35)] hover:text-[var(--gold)]'
+          }
+        >
           Quản lý sản phẩm
+          <ArrowRight size={12} strokeWidth={1.6} />
         </Link>
       </div>
 
-      {isLoading ? (
-        <div className="rounded-[28px] border border-dashed border-[rgba(201,168,76,0.14)] bg-[rgba(255,255,255,0.03)] px-6 py-12 text-sm text-[rgba(240,235,224,0.58)]">
-          Đang tải dữ liệu...
+      {/* ── Low stock alert (nếu có) ── */}
+      {!loading && lowStockCount > 0 && (
+        <div className="flex items-center gap-[10px] rounded-[12px] border border-[rgba(248,113,113,0.25)] bg-[rgba(248,113,113,0.06)] px-[16px] py-[10px]">
+          <AlertTriangle size={14} strokeWidth={1.6} className="shrink-0 text-[rgba(248,113,113,0.8)]" />
+          <p className="text-[12px] text-[rgba(248,113,113,0.8)]">
+            {lowStockCount} danh mục đang ở mức tồn kho thấp. 
+            <Link href="/admin/products" className="ml-[6px] underline underline-offset-2 hover:text-[rgba(248,113,113,1)]">
+              Kiểm tra ngay
+            </Link>
+          </p>
+        </div>
+      )}
+
+      {/* ── Metric cards ── */}
+      {loading ? (
+        <div className="grid grid-cols-4 gap-[10px]">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="rounded-[20px] border border-[rgba(201,168,76,0.12)] bg-[rgba(255,255,255,0.02)] p-[20px]">
+              <Skeleton h="h-[9px]" w="w-[60%]" />
+              <Skeleton h="h-[32px]" w="w-[70%]" className="mt-[14px]" />
+              <Skeleton h="h-[11px]" w="w-[85%]" className="mt-[10px]" />
+            </div>
+          ))}
         </div>
       ) : (
-        <>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <MetricCard title="Doanh thu" value={`${formatVnd(stats.total_revenue_vnd)} VND`} description="Tổng doanh thu tích lũy từ các đơn hàng đã ghi nhận." icon={BarChart3} />
-            <MetricCard title="Đơn hàng" value={formatVnd(stats.total_orders)} description="Số đơn hàng trong toàn bộ hệ thống." icon={ShoppingCart} />
-            <MetricCard title="Sản phẩm" value={formatVnd(stats.total_products)} description="Tổng số sản phẩm đang quản lý." icon={Package} />
-            <MetricCard title="Khách hàng" value={formatVnd(stats.total_customers)} description="Số tài khoản khách hàng đã phát sinh đơn." icon={Users} />
-          </div>
-
-          <div className="rounded-[28px] border border-[rgba(201,168,76,0.14)] bg-[rgba(255,255,255,0.02)] p-6 shadow-[0_18px_50px_rgba(0,0,0,0.12)]">
-            <div className="mb-5 flex items-center justify-between gap-4">
-              <h3 className="text-[1.4rem] leading-[1.1] tracking-[-0.03em] text-[#f0ebe0]" style={{ fontFamily: 'var(--font-display)', fontWeight: 400 }}>
-                Đơn hàng gần đây
-              </h3>
-              <Link href="/admin/orders" className="inline-flex items-center gap-2 text-[13px] text-[rgba(240,235,224,0.62)] transition hover:text-[#c9a84c]">
-                Xem toàn bộ
-              </Link>
-            </div>
-
-            {recentOrders.length === 0 ? (
-              <div className="rounded-[24px] border border-dashed border-[rgba(201,168,76,0.14)] bg-[rgba(255,255,255,0.03)] px-6 py-10 text-sm text-[rgba(240,235,224,0.58)]">
-                Chưa có đơn hàng nào.
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full border-separate border-spacing-0 text-left">
-                  <thead>
-                    <tr className="text-[10px] uppercase tracking-[0.28em] text-[rgba(240,235,224,0.36)]">
-                      <th className="border-b border-[rgba(201,168,76,0.12)] px-3 py-4 font-medium">Mã đơn</th>
-                      <th className="border-b border-[rgba(201,168,76,0.12)] px-3 py-4 font-medium">Ngày đặt</th>
-                      <th className="border-b border-[rgba(201,168,76,0.12)] px-3 py-4 font-medium">Khách hàng</th>
-                      <th className="border-b border-[rgba(201,168,76,0.12)] px-3 py-4 font-medium">Tổng tiền</th>
-                      <th className="border-b border-[rgba(201,168,76,0.12)] px-3 py-4 font-medium">Trạng thái</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {recentOrders.map((order) => {
-                      const status = normalizeStatus(order.order_status);
-
-                      return (
-                        <tr key={order.id} className="text-sm text-[rgba(240,235,224,0.72)]">
-                          <td className="border-b border-[rgba(201,168,76,0.08)] px-3 py-4 font-medium text-[#f0ebe0]">{order.id}</td>
-                          <td className="border-b border-[rgba(201,168,76,0.08)] px-3 py-4">{formatDate(order.created_at)}</td>
-                          <td className="border-b border-[rgba(201,168,76,0.08)] px-3 py-4">
-                            <div className="font-medium text-[#f0ebe0]">{order.user_full_name || 'Khách hàng'}</div>
-                            <div className="text-xs text-[rgba(240,235,224,0.4)]">{order.user_email || '--'}</div>
-                          </td>
-                          <td className="border-b border-[rgba(201,168,76,0.08)] px-3 py-4">{formatVnd(order.total_amount_vnd)} VND</td>
-                          <td className="border-b border-[rgba(201,168,76,0.08)] px-3 py-4">
-                            <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-medium capitalize ${getStatusBadgeClass(status)}`}>
-                              {status || 'pending'}
-                            </span>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </>
+        <div className="grid grid-cols-2 gap-[10px] xl:grid-cols-4">
+          <MetricCard
+            title="Doanh thu"
+            value={`${fmtVnd(stats.total_revenue_vnd)} ₫`}
+            description="Tổng doanh thu tích lũy từ các đơn đã ghi nhận."
+            icon={BarChart2}
+            accent
+            trend={1}
+            trendLabel="Đang tăng trưởng"
+          />
+          <MetricCard
+            title="Đơn hàng"
+            value={fmtVnd(stats.total_orders)}
+            description="Tổng số đơn hàng trong hệ thống."
+            icon={ShoppingCart}
+          />
+          <MetricCard
+            title="Sản phẩm"
+            value={fmtVnd(stats.total_products)}
+            description="Tổng số sản phẩm đang quản lý."
+            icon={Package}
+          />
+          <MetricCard
+            title="Khách hàng"
+            value={fmtVnd(stats.total_customers)}
+            description="Tài khoản khách hàng đã phát sinh đơn."
+            icon={Users}
+          />
+        </div>
       )}
+
+      {/* ── Content row: orders + stock chart ── */}
+      <div className="grid grid-cols-[1fr_300px] gap-[14px]">
+
+        {/* Orders table */}
+        <div className="overflow-hidden rounded-[20px] border border-[rgba(201,168,76,0.12)] bg-[rgba(255,255,255,0.02)]">
+          <PanelHead title="Đơn hàng gần đây" href="/admin/orders" />
+
+          {loading ? (
+            <div className="flex flex-col gap-[12px] p-[20px]">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="flex items-center gap-[12px]">
+                  <Skeleton h="h-[28px]" w="w-[28px]" className="rounded-full shrink-0" />
+                  <div className="flex flex-1 flex-col gap-[6px]">
+                    <Skeleton h="h-[11px]" w="w-[40%]" />
+                    <Skeleton h="h-[10px]" w="w-[60%]" />
+                  </div>
+                  <Skeleton h="h-[11px]" w="w-[80px]" />
+                </div>
+              ))}
+            </div>
+          ) : stats.recent_orders.length === 0 ? (
+            <div className="px-[20px] py-[40px] text-center text-[12px] text-[rgba(240,235,224,0.36)]">
+              Chưa có đơn hàng nào.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full border-separate border-spacing-0 text-left">
+                <thead>
+                  <tr className="text-[9px] uppercase tracking-[0.26em] text-[rgba(240,235,224,0.3)]">
+                    {['Mã đơn', 'Ngày đặt', 'Khách hàng', 'Tổng tiền', 'Trạng thái', ''].map((h) => (
+                      <th key={h} className="border-b border-[rgba(201,168,76,0.1)] px-[16px] py-[12px] font-medium">
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {stats.recent_orders.map((order) => {
+                    const status = normalizeStatus(order.order_status);
+                    return (
+                      <tr
+                        key={order.id}
+                        className="text-[12px] text-[rgba(240,235,224,0.65)] transition-colors hover:bg-[rgba(201,168,76,0.03)]"
+                      >
+                        <td className="border-b border-[rgba(201,168,76,0.07)] px-[16px] py-[12px] font-medium text-[var(--ink)]">
+                          {order.id}
+                        </td>
+                        <td className="border-b border-[rgba(201,168,76,0.07)] px-[16px] py-[12px] text-[rgba(240,235,224,0.48)]">
+                          {fmtDate(order.created_at)}
+                        </td>
+                        <td className="border-b border-[rgba(201,168,76,0.07)] px-[16px] py-[12px]">
+                          <p className="font-medium text-[var(--ink)]">
+                            {order.user_full_name || 'Khách hàng'}
+                          </p>
+                          <p className="text-[10px] text-[rgba(240,235,224,0.36)]">
+                            {order.user_email || '--'}
+                          </p>
+                        </td>
+                        <td className="border-b border-[rgba(201,168,76,0.07)] px-[16px] py-[12px]">
+                          {fmtVnd(order.total_amount_vnd)} ₫
+                        </td>
+                        <td className="border-b border-[rgba(201,168,76,0.07)] px-[16px] py-[12px]">
+                          <span
+                            className={`inline-flex rounded-full border px-[8px] py-[2px] text-[9px] font-medium capitalize ${statusStyle(status)}`}
+                          >
+                            {status || 'pending'}
+                          </span>
+                        </td>
+                        <td className="border-b border-[rgba(201,168,76,0.07)] px-[16px] py-[12px] text-right">
+                          <Link
+                            href={`/admin/orders/${order.id}`}
+                            className="flex items-center justify-end gap-[4px] text-[10px] uppercase tracking-[0.08em] text-[rgba(240,235,224,0.4)] transition-colors hover:text-[var(--gold)]"
+                          >
+                            Chi tiết
+                            <ArrowRight size={10} strokeWidth={1.8} />
+                          </Link>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Right column: stock chart + quick links */}
+        <div className="flex flex-col gap-[14px]">
+
+          {/* Stock chart panel */}
+          <div className="overflow-hidden rounded-[20px] border border-[rgba(201,168,76,0.12)] bg-[rgba(255,255,255,0.02)]">
+            <PanelHead title="Tồn kho" href="/admin/products" linkLabel="Quản lý" />
+            <div className="px-[16px] pb-[14px] pt-[12px]">
+              {loading ? (
+                <div className="flex h-[72px] items-end gap-[4px]">
+                  {[...Array(6)].map((_, i) => (
+                    <Skeleton
+                      key={i}
+                      h={`h-[${30 + i * 8}%]`}
+                      w="w-full"
+                      className="rounded-[3px_3px_0_0]"
+                    />
+                  ))}
+                </div>
+              ) : stats.category_stocks.length > 0 ? (
+                <>
+                  <StockBarChart data={stats.category_stocks} />
+                  <div className="mt-[8px] flex flex-wrap gap-x-[10px] gap-y-[4px]">
+                    {stats.category_stocks.map((c, i) => (
+                      <span key={i} className="text-[9px] text-[rgba(240,235,224,0.3)]">
+                        {c.label}
+                      </span>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <p className="py-[24px] text-center text-[11px] text-[rgba(240,235,224,0.3)]">
+                  Chưa có dữ liệu tồn kho.
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Quick links */}
+          <div className="overflow-hidden rounded-[20px] border border-[rgba(201,168,76,0.12)] bg-[rgba(255,255,255,0.02)]">
+            <PanelHead title="Truy cập nhanh" />
+            <div className="flex flex-col divide-y divide-[rgba(201,168,76,0.08)]">
+              {[
+                { href: '/admin/products/new', label: 'Thêm sản phẩm mới',  icon: Package      },
+                { href: '/admin/orders',        label: 'Quản lý đơn hàng',   icon: ShoppingCart },
+                { href: '/admin/customers',     label: 'Danh sách khách hàng', icon: Users      },
+              ].map(({ href, label, icon: Icon }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  className="flex items-center gap-[10px] px-[16px] py-[12px] text-[12px] text-[rgba(240,235,224,0.55)] transition-all hover:bg-[rgba(201,168,76,0.04)] hover:text-[var(--gold)]"
+                >
+                  <Icon size={13} strokeWidth={1.5} className="shrink-0 opacity-60" />
+                  {label}
+                  <ArrowRight size={11} strokeWidth={1.6} className="ml-auto opacity-0 transition-opacity group-hover:opacity-100" />
+                </Link>
+              ))}
+            </div>
+          </div>
+
+        </div>
+      </div>
+
     </section>
   );
 }

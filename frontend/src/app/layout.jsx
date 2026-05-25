@@ -1,5 +1,6 @@
 import { Cormorant_Garamond, DM_Sans } from 'next/font/google';
 import './globals.css';
+import Providers from './providers';
 
 const dmSans = DM_Sans({
   subsets: ['latin'],
@@ -30,7 +31,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="vi" suppressHydrationWarning className={`${dmSans.variable} ${cormorant.variable}`}>
       <body className="font-sans antialiased bg-[#0b0a07] text-[#f0ebe0] min-h-screen" suppressHydrationWarning>
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

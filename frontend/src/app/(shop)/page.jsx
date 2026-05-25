@@ -329,7 +329,7 @@ export default function HomePage() {
               <Link href="/products" className="ct-btn-gold">
                 Khám phá sản phẩm <ArrowRight size={14} aria-hidden="true" />
               </Link>
-              <Link href="#story" className="ct-btn-ghost">
+              <Link href="/stories" className="ct-btn-ghost">
                 Câu chuyện thương hiệu
               </Link>
               {isAuth && user?.role === 'admin' && (

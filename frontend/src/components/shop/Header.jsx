@@ -9,7 +9,7 @@ import { useStore } from '../../store/useStore';
 const navItems = [
   { href: '/',           label: 'Trang chủ' },
   { href: '/products',   label: 'Sản phẩm' },
-  { href: '/#story',     label: 'Câu chuyện' },
+  { href: '/stories',    label: 'Câu chuyện' },
   { href: '/#brand',     label: 'Vùng nguyên liệu' },
   { href: '/#contact',   label: 'Liên hệ' },
 ];

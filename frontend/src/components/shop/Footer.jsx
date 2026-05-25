@@ -4,6 +4,7 @@ import Link from 'next/link';
 
 const navLeft = [
   { href: '/products',  label: 'Sản phẩm' },
+  { href: '/stories',   label: 'Câu chuyện' },
   { href: '/cart',      label: 'Giỏ hàng' },
   { href: '/checkout',  label: 'Thanh toán' },
   { href: '/admin',     label: 'Admin' },
