@@ -11,7 +11,7 @@ const navItems = [
   { href: '/products',   label: 'Sản phẩm' },
   { href: '/stories',    label: 'Câu chuyện' },
   { href: '/#brand',     label: 'Vùng nguyên liệu' },
-  { href: '/#contact',   label: 'Liên hệ' },
+  { href: '/contact',    label: 'Liên hệ' },
 ];
 
 // ─── Inline Logo ──────────────────────────────────────────────

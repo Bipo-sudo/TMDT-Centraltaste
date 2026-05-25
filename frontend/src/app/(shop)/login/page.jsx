@@ -651,7 +651,7 @@ export default function LoginPage() {
             <span className="ct-footer-dot">•</span>
             <Link href="/privacy">Bảo mật</Link>
             <span className="ct-footer-dot">•</span>
-            <Link href="/#contact">Hỗ trợ</Link>
+            <Link href="/contact">Hỗ trợ</Link>
           </nav>
         </div>
       </div>

@@ -809,7 +809,7 @@ export default function BrandStoryPage() {
               <Link href="/products" className="ct-cta-gold">
                 Khám phá sản phẩm <ArrowRight size={16} />
               </Link>
-              <Link href="/#contact" className="ct-cta-ghost">
+              <Link href="/contact" className="ct-cta-ghost">
                 Liên hệ tư vấn
               </Link>
             </div>

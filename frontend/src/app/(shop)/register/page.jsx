@@ -694,7 +694,7 @@ export default function RegisterPage() {
             <span style={{ color: 'rgba(240,235,224,0.15)', fontSize: 11 }}>•</span>
             <Link href="/privacy">Bảo mật</Link>
             <span style={{ color: 'rgba(240,235,224,0.15)', fontSize: 11 }}>•</span>
-            <Link href="/#contact">Hỗ trợ</Link>
+            <Link href="/contact">Hỗ trợ</Link>
           </nav>
         </div>
       </div>
