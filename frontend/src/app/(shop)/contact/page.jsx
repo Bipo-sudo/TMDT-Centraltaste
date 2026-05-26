@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import emailjs from '@emailjs/browser';
 import Link from 'next/link';
 import {
   Phone, Mail, MapPin, Clock, ArrowRight, Send,
@@ -11,9 +12,10 @@ import {
 /* ──────────────────────────────────────────────────────────
    EMAILJS CONFIG
 ────────────────────────────────────────────────────────── */
-const EJS_SERVICE_ID  = 'YOUR_SERVICE_ID';
-const EJS_TEMPLATE_ID = 'YOUR_TEMPLATE_ID';
-const EJS_PUBLIC_KEY  = 'YOUR_PUBLIC_KEY';
+const EJS_SERVICE_ID  = 'service_8q44fpr';
+const EJS_TEMPLATE_ID = 'template_bep3aor';
+const EJS_ADMIN_TEMPLATE_ID = 'template_8nc5tq9';
+const EJS_PUBLIC_KEY  = '168WkV2EuECMCgqLk';
 
 /* ──────────────────────────────────────────────────────────
    MEDIA
@@ -144,22 +146,36 @@ function ContactForm() {
   async function handleSubmit(e) {
     e.preventDefault();
     if (!form.name || !form.email || !form.message) {
-      setError('Vui lòng điền đầy đủ họ tên, email và nội dung.'); return;
+      setError('Vui lòng điền đầy đủ họ tên, email và nội dung.'); 
+      return;
     }
-    setSending(true); setError('');
-    try {
-      await window.emailjs.send(EJS_SERVICE_ID, EJS_TEMPLATE_ID, {
-        from_name:  form.name,
-        from_email: form.email,
-        phone:      form.phone || 'Không cung cấp',
-        reason:     CONTACT_REASONS.find(r => r.value === form.reason)?.label || '—',
+    
+    setSending(true); 
+    setError('');
+    
+try {
+      const templateParams = {
+        user_name:  form.name,
+        user_email: form.email,
+        user_phone: form.phone || 'Không cung cấp',
+        subject:    CONTACT_REASONS.find(r => r.value === form.reason)?.label || 'Chưa xác định chủ đề',
         message:    form.message,
-        to_email:   'concierge.daif@gmail.com',
-      });
+      };
+
+      // Kích hoạt gửi đồng thời cả 2 mẫu thư cùng một lúc
+      await Promise.all([
+        // Luồng 1: Thư luxury gửi tới hòm thư của khách hàng
+        emailjs.send(EJS_SERVICE_ID, EJS_TEMPLATE_ID, templateParams, EJS_PUBLIC_KEY),
+        
+        // Luồng 2: Phiếu Ticket chứa dữ liệu gửi tới hòm thư của Ban quản trị
+        emailjs.send(EJS_SERVICE_ID, EJS_ADMIN_TEMPLATE_ID, templateParams, EJS_PUBLIC_KEY)
+      ]);
+      
       setSent(true);
       setForm({ name: '', email: '', phone: '', reason: '', message: '' });
-    } catch {
-      setError('Gửi thất bại. Vui lòng thử lại hoặc email trực tiếp.');
+    } catch (err) {
+      console.error('EmailJS Error:', err);
+      setError('Hệ thống đang bận. Vui lòng thử lại sau.');
     } finally {
       setSending(false);
     }
@@ -283,13 +299,13 @@ function ContactForm() {
         onMouseLeave={e => { e.currentTarget.style.filter = 'brightness(1)'; e.currentTarget.style.transform = 'translateY(0)'; }}
       >
         {sending
-          ? <><div style={{ width: 16, height: 16, borderRadius: '50%', border: '2px solid rgba(26,18,8,0.3)', borderTopColor: '#1a1208', animation: 'spin 0.8s linear infinite' }} />Đang gửi...</>
-          : <><Send size={15} />Gửi tin nhắn</>
+          ? <><div style={{ width: 16, height: 16, borderRadius: '50%', border: '2px solid rgba(26,18,8,0.3)', borderTopColor: '#1a1208', animation: 'spin 0.8s linear infinite' }} />Đang xử lý...</>
+          : <><Send size={15} />Gửi yêu cầu</>
         }
       </button>
 
       <p style={{ fontSize: 11, color: 'rgba(240,235,224,0.28)', textAlign: 'center', margin: 0, lineHeight: 1.6 }}>
-        Thông tin của bạn được bảo mật. Chúng tôi không chia sẻ với bên thứ ba.
+        Thông tin của bạn được bảo mật tuyệt đối bởi hệ thống của D'Onyx Group.
       </p>
     </form>
   );
